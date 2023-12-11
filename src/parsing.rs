@@ -78,7 +78,6 @@ impl TryFrom<&str> for Instruction {
 
         eprintln!("INFO: Verb is: {verb}");
 
-        dbg!(&parts.clone().collect::<Vec<_>>());
 
         generate_parse_match!(verb, parts,
            AND, OR, XOR, ADD, SUB, SHA, SHL, CMPLT, CMPLE, CMPEQ, CMPLTU, CMPLEU)

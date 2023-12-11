@@ -21,12 +21,15 @@ fn main() {
     let init_regs: [Reg; 8] = [Reg(0); 8];
     let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
         (MemAddr(0), "MOVI R2, 0x24".try_into().unwrap()),
+        (MemAddr(2), "MOVI R3, 0x94".try_into().unwrap()),
     ]);
 
     let mut cpu = Processador::new(init_regs, memory, init_pc, instructions);
     println!("{cpu}");
-    cpu.execute_raw(&"MOVI R2, 0x24".try_into().unwrap());
-    //cpu.execute_next();
+    //cpu.execute_raw(&"MOVI R2, 0x24".try_into().unwrap());
+    //cpu.execute_raw(&"MOVI R3, 0x94".try_into().unwrap());
+    cpu.execute_next();
+    cpu.execute_next();
     println!("{cpu}");
 }
 

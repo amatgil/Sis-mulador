@@ -96,18 +96,31 @@ impl Processador {
             Instruction::STB { d, x, addr } => todo!(),
             Instruction::BZ { a, offset } => todo!(),
             Instruction::BNZ { a, offset } => todo!(),
-            Instruction::MOVI { d, n } => { todo!() }
+            Instruction::MOVI { d, n } => {
+                let n = sign_extend(n);
+                self.regs[d.0 as usize].0 = n.0;
+            }
             Instruction::MOVHI { d, n } => todo!(),
             Instruction::IN { d, n } => todo!(),
             Instruction::OUT { d, n } => todo!(),
             Instruction::NOP => todo!(),
         }
+        println!();
     }
     pub fn execute_next(&mut self) {
+        println!("Executing instruction at PC = {}", self.pc);
         let inst = self.inst_memory[&self.pc.into()].clone();
-        self.pc.advance();
         self.execute_raw(&inst);
+        self.pc.advance();
     }
+}
+
+fn sign_extend(n: &MemValue) -> MemValue {
+    print!("Sign extended 0x{:0>4X}", n.0);
+    let val = if n.0 < (1 << 7) { n.0 } else { n.0 + 0xFF00 };
+    println!(" into 0x{:0>4X}", n.0);
+
+    MemValue(val)
 }
 
 impl From<PC> for MemAddr {

@@ -1,4 +1,4 @@
-use crate::{MemAddr, MemOffset};
+use crate::{MemAddr, MemOffset, MemValue};
 
 #[derive(Debug, Clone)]
 pub enum Instruction {
@@ -104,11 +104,11 @@ pub enum Instruction {
     },
     MOVI { 
         d: RegLabel,
-        n: MemAddr,
+        n: MemValue,
     },
     MOVHI { 
         d: RegLabel,
-        n: MemAddr,
+        n: MemValue,
     },
     IN {
         d: RegLabel,
