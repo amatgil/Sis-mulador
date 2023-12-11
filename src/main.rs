@@ -1,28 +1,32 @@
 use std::collections::HashMap;
 
-use SISACompiler::{Reg, PC, MemAddr, MemValue, Processador};
+use SISACompiler::{Reg, PC, MemAddr, MemValue, Processador, Instruction};
 
 fn main() {
     let mut memory: HashMap<MemAddr, MemValue> = HashMap::from([
-        ("0x0022".into(), "0x0000".into()),
-        ("0x0024".into(), "0x0002".into()),
-        ("0x0026".into(), "0xFFFB".into()),
-        ("0x0028".into(), "0x0108".into()),
-        ("0x002A".into(), "0xFF9D".into()),
-        ("0x002C".into(), "0x0017".into()),
-        ("0x002E".into(), "0x003A".into()),
-        ("0x0030".into(), "0xFF9C".into()),
-        ("0x0032".into(), "0x0020".into()),
-        ("0x0034".into(), "0x0000".into()),
-        ("0x0036".into(), "0xFFF9".into()),
+        ("0x0022".try_into().unwrap(), "0x0000".try_into().unwrap()),
+        ("0x0024".try_into().unwrap(), "0x0002".try_into().unwrap()),
+        ("0x0026".try_into().unwrap(), "0xFFFB".try_into().unwrap()),
+        ("0x0028".try_into().unwrap(), "0x0108".try_into().unwrap()),
+        ("0x002A".try_into().unwrap(), "0xFF9D".try_into().unwrap()),
+        ("0x002C".try_into().unwrap(), "0x0017".try_into().unwrap()),
+        ("0x002E".try_into().unwrap(), "0x003A".try_into().unwrap()),
+        ("0x0030".try_into().unwrap(), "0xFF9C".try_into().unwrap()),
+        ("0x0032".try_into().unwrap(), "0x0020".try_into().unwrap()),
+        ("0x0034".try_into().unwrap(), "0x0000".try_into().unwrap()),
+        ("0x0036".try_into().unwrap(), "0xFFF9".try_into().unwrap()),
     ]);
 
-    let init_pc: PC = "0x0000".into();
+    let init_pc: PC = PC(0);
     let init_regs: [Reg; 8] = [Reg(0); 8];
+    let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
+        (MemAddr(0), "MOVI R2, 0x24".try_into().unwrap()),
+    ]);
 
-    let mut cpu = Processador::new(init_regs, memory, init_pc);
+    let mut cpu = Processador::new(init_regs, memory, init_pc, instructions);
     println!("{cpu}");
-    cpu.execute(&"MOVI R2, 0x24".try_into().unwrap());
+    cpu.execute_raw(&"MOVI R2, 0x24".try_into().unwrap());
+    //cpu.execute_next();
     println!("{cpu}");
 }
 

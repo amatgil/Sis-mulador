@@ -1,127 +1,130 @@
-#[derive(Debug)]
+use crate::{MemAddr, MemOffset};
+
+#[derive(Debug, Clone)]
 pub enum Instruction {
     /// OP == 00
     AND {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     OR {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     XOR {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     NOT {
-        destination: Option<RegLabel>,
-        x: RegLabel,
+        a: RegLabel,
+        d: RegLabel,
     },
     ADD {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     SUB {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     SHA {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     SHL {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
 
     /// OP == 01
     CMPLT{
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     CMPLE{
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     CMPEQ{
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     CMPLTU{
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     CMPLEU{
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: RegLabel,
     },
     ADDI {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: ImmediateN,
+        d: RegLabel,
     },
     LD {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: ImmediateN,
+        d: RegLabel,
     },
     ST {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: RegLabel,
+        d: ImmediateN,
     },
     LDB {
-        destination: Option<RegLabel>,
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        b: ImmediateN,
+        d: RegLabel,
     },
     STB {
-        destination: Option<RegLabel>,
+        d: RegLabel,
         x: RegLabel,
-        y: Data,
+        addr: ImmediateN,
     },
     BZ {
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        offset: ImmediateN,
     },
     BNZ {
-        x: RegLabel,
-        y: Data,
+        a: RegLabel,
+        offset: ImmediateN,
     },
     MOVI { 
-        destination: Option<RegLabel>,
-        y: Data,
+        d: RegLabel,
+        n: MemAddr,
     },
     MOVHI { 
-        destination: Option<RegLabel>,
-        y: Data,
+        d: RegLabel,
+        n: MemAddr,
     },
     IN {
-        destination: RegLabel,
+        d: RegLabel,
+        n: ImmediateN,
     },
     OUT {
-        x: Data,
+        d: RegLabel,
+        n: ImmediateN,
     },
     NOP, 
 
 }
 
-#[derive(Debug)]
-pub enum Data {
-    Reg(RegLabel),
-    Immediate(i16)
-}
 #[derive(Debug, Clone, Copy)]
 pub struct RegLabel(pub u8);
+
+#[derive(Debug, Clone, Copy)]
+pub struct ImmediateN(pub usize);
+

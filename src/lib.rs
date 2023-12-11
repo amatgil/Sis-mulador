@@ -1,7 +1,7 @@
 pub mod parsing;
 pub mod spec;
 
-use std::{collections::HashMap, fmt::{Display, self}};
+use std::{collections::HashMap, fmt::{Display, self}, num::{ParseIntError, TryFromIntError}};
 
 pub use spec::*;
 pub use parsing::*;
@@ -16,31 +16,47 @@ pub struct MemAddr(pub usize);
 pub struct MemValue(pub usize);
 
 #[derive(Clone, Copy)]
+pub struct MemOffset(pub usize);
+
+#[derive(Clone, Copy)]
 pub struct PC(pub usize);
 
 pub struct Processador {
     regs: [Reg; 8],
     memory: HashMap<MemAddr, MemValue>,
+    inst_memory: HashMap<MemAddr, Instruction>,
     pc: PC,
 }
 
 
-impl From<&str> for MemAddr { fn from(val: &str) -> Self { Self(norm_n(val)) } }
-impl From<&str> for MemValue { fn from(val: &str) -> Self { Self(norm_n(val)) } }
-impl From<&str> for PC { fn from(val: &str) -> Self { Self(norm_n(val)) } }
-
-impl Display for MemAddr { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:x}", self.0) } }
-impl Display for MemValue { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:x}", self.0) } }
-impl Display for PC { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{:x}", self.0) } }
-
-impl fmt::Debug for MemAddr { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.to_string()) } }
-impl fmt::Debug for MemValue { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.to_string()) } }
-impl fmt::Debug for PC { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.to_string()) } }
+macro_rules! try_from_str {
+    ($($name:ident),*$(,)?) => {
+        $(
+        impl TryFrom<&str> for $name { 
+            type Error = ParseError; 
+            fn try_from(val: &str) -> Result<Self, ParseError> { 
+                let n = norm_n(val)?;
+                Ok(Self(n))
+            }
+        }
+        )*
+    }
+}
+macro_rules! other_impls {
+    ($($name:ident),*$(,)?) => {
+        $(
+            impl Display for $name { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "0x{:0>4X}", self.0) } }
+            impl fmt::Debug for $name { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.to_string()) } }
+        )*
+    }
+}
+try_from_str!(MemAddr, MemValue, MemOffset, PC, ImmediateN);
+other_impls!(MemAddr, MemValue, MemOffset, PC);
 
 impl Display for Processador {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut out = String::new();
-        for (i, reg) in self.regs.iter().enumerate() { out.push_str(&format!("R{i}: {}", reg.0)); }
+        for (i, reg) in self.regs.iter().enumerate() { out.push_str(&format!("R{i}: 0x{:0>4X} // ", reg.0)); }
         out.push('\n');
         out.push_str(&format!("{:?}", self.memory));
 
@@ -48,19 +64,60 @@ impl Display for Processador {
     }
 }
 
-fn norm_n(input: &str) -> usize {
-    if input.len() <= 2 || &input[..2] != "0x" { input.parse().unwrap() } // Is dec here
-    else {  usize::from_str_radix(&input[2..], 16).expect("Numero hex invàlid") }
+fn norm_n(input: &str) -> Result<usize, ParseIntError> {
+    if input.len() <= 2 || &input[..2] != "0x" { input.parse() } // Is dec here
+    else {  usize::from_str_radix(&input[2..], 16) }
 }
 
 impl Processador {
-    pub fn new(init_regs: [Reg; 8], init_mem: HashMap<MemAddr, MemValue>, init_pc: PC) -> Self {
-        Self { regs: init_regs, memory: init_mem, pc: init_pc, }
+    pub fn new(init_regs: [Reg; 8], init_mem: HashMap<MemAddr, MemValue>, init_pc: PC, instructions: HashMap<MemAddr, Instruction>) -> Self {
+        Self { regs: init_regs, memory: init_mem, pc: init_pc, inst_memory: instructions }
     }
-    pub fn execute(&mut self, inst: &Instruction) {
+    pub fn execute_raw(&mut self, inst: &Instruction) {
+        println!("Running {inst:?}");
         match inst {
-            _ => todo!(),
+            Instruction::AND { a, b, d } => todo!(),
+            Instruction::OR { a, b, d } => todo!(),
+            Instruction::XOR { a, b, d } => todo!(),
+            Instruction::NOT { a, d } => todo!(),
+            Instruction::ADD { a, b, d } => todo!(),
+            Instruction::SUB { a, b, d } => todo!(),
+            Instruction::SHA { a, b, d } => todo!(),
+            Instruction::SHL { a, b, d } => todo!(),
+            Instruction::CMPLT { a, b, d } => todo!(),
+            Instruction::CMPLE { a, b, d } => todo!(),
+            Instruction::CMPEQ { a, b, d } => todo!(),
+            Instruction::CMPLTU { a, b, d } => todo!(),
+            Instruction::CMPLEU { a, b, d } => todo!(),
+            Instruction::ADDI { a, b, d } => todo!(),
+            Instruction::LD { a, b, d } => todo!(),
+            Instruction::ST { a, b, d } => todo!(),
+            Instruction::LDB { a, b, d } => todo!(),
+            Instruction::STB { d, x, addr } => todo!(),
+            Instruction::BZ { a, offset } => todo!(),
+            Instruction::BNZ { a, offset } => todo!(),
+            Instruction::MOVI { d, n } => { todo!() }
+            Instruction::MOVHI { d, n } => todo!(),
+            Instruction::IN { d, n } => todo!(),
+            Instruction::OUT { d, n } => todo!(),
+            Instruction::NOP => todo!(),
         }
+    }
+    pub fn execute_next(&mut self) {
+        let inst = self.inst_memory[&self.pc.into()].clone();
+        self.pc.advance();
+        self.execute_raw(&inst);
+    }
+}
+
+impl From<PC> for MemAddr {
+    fn from(value: PC) -> Self {
+        Self(norm_n(&format!("{:X}", value.0)).unwrap())
+    }
+}
+impl PC {
+    fn advance(&mut self) {
+        self.0 += 2;
     }
 }
 
@@ -73,6 +130,6 @@ fn test_norm() {
     ]);
     for (k, v) in pairs {
         dbg!(k, v);
-        assert_eq!(norm_n(k), v);
+        assert_eq!(norm_n(k), Ok(v));
     }
 }

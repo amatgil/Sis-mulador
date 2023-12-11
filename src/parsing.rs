@@ -3,28 +3,43 @@ use std::num::ParseIntError;
 use crate::*;
 
 macro_rules! generate_parse_match {
-    ($verb:ident, $is_immediate:ident, $destination:ident, $parts:ident, $($name:ident),*$(,)?) => {
-        Ok(match ($verb, $is_immediate) {
-            // Binary ones
+    ($verb:ident, $parts:ident, $($name:ident),*$(,)?) => {
+        Ok(match $verb {
+            // Binary ones (AL, CMP)
             $(
-                (stringify!($name), true) => Instruction::$name {
-                    destination: $destination,
-                    x: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
-                    y: Data::Immediate(i16::from_str_radix(&$parts.next().ok_or(ParseError::MissingImmediate)?[2..], 16)? as i16)
-                },
-                (stringify!($name), false) => Instruction::$name {
-                    destination: $destination,
-                    x: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
-                    y: Data::Reg(RegLabel::try_from($parts.next().ok_or(ParseError::MissingReg)?)?)
+                stringify!($name) => Instruction::$name {
+                    a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                    b: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                    d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 },
             )*
-            //Edge cases
-            ("NOT", _) => Instruction::NOT  { $destination, x: $parts.next().ok_or(ParseError::MissingReg)?.try_into()? }, // There is no immediate NOT
-
-            // Extra-taula
-            ("MOVE", true) => Instruction::MOVE { destination: $destination.expect("Tried to move to nowhere"), x: Data::Immediate(u16::from_str_radix(&$parts.next().ok_or(ParseError::MissingImmediate)?[2..], 16)? as i16)},
-            ("MOVE", false) => Instruction::MOVE { destination: $destination.expect("Tried to move to nowhere"), x: Data::Reg(RegLabel::try_from($parts.next().ok_or(ParseError::MissingReg)?)?)},
-            (v, i) => panic!("Erroring out, can't parse: '{v}, {i}'"),
+            // Has no destination, is special
+            "NOT" => Instruction::NOT  {
+                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()? 
+            },
+            "ADDI" => Instruction::ADDI {
+                a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                b: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+            },
+            "BZ" => Instruction::BZ {
+                a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                offset: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+            },
+            "BNZ" => Instruction::BNZ {
+                a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                offset: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+            },
+            "MOVI" => Instruction::MOVI {
+                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                n: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+            },
+            "MOVHI" => Instruction::MOVHI {
+                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                n: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+            },
+            x => return Err(ParseError::UnrecognizedInstruction(x.into()))
         })
     }
 }
@@ -37,52 +52,35 @@ pub enum ParseError {
     MissingReg,
     EmptyVerb,
     ParseInt(ParseIntError),
-    RegLabelError(RegLabelError),
+    TryFromInt(TryFromIntError),
+    RegLabel(RegLabelError),
+    UnrecognizedInstruction(String)
 }
 
-impl From<ParseIntError> for ParseError {
-    fn from(value: ParseIntError) -> Self { Self::ParseInt(value) }
-}
-
-impl From<RegLabelError> for ParseError {
-    fn from(value: RegLabelError) -> Self {
-        Self::RegLabelError(value)
-    }
-}
-
+impl From<ParseIntError> for ParseError { fn from(value: ParseIntError) -> Self { Self::ParseInt(value) } }
+impl From<TryFromIntError> for ParseError { fn from(value: TryFromIntError) -> Self { Self::TryFromInt(value) } }
+impl From<RegLabelError> for ParseError { fn from(value: RegLabelError) -> Self { Self::RegLabel(value) } }
 
 impl TryFrom<&str> for Instruction {
     type Error = ParseError;
 
     fn try_from(value: &str) -> Result<Self, ParseError> {
         let mut parts = value.split(" ");
-        let mut verb = parts.next().ok_or(ParseError::MissingVerb)?;
-        let is_immediate = verb.bytes().last().ok_or(ParseError::EmptyVerb)? == b'I'; // For NOT, this must always be false
+        let verb = parts.next().ok_or(ParseError::MissingVerb)?;
 
         // Special cases
         if verb == "NOP" { return Ok(Instruction::NOP) } 
         else if verb == "OUT" {
-            if is_immediate {
-                return Ok(Instruction::OUT { x: Data::Immediate(parts.next().ok_or(ParseError::MissingImmediate)?.parse()?)});
-            } else {
-                return Ok(Instruction::OUT { x: Data::Reg(parts.next().ok_or(ParseError::MissingReg)?.try_into()?) });
-            }
+            return Ok(Instruction::OUT { d: parts.next().ok_or(ParseError::MissingReg)?.try_into()?, n: ImmediateN(parts.next().ok_or(ParseError::MissingImmediate)?.parse()?) });
         } else if verb == "IN" {
-            return Ok(Instruction::IN { destination: parts.next().ok_or(ParseError::MissingDestination)?.try_into()?});
+            return Ok(Instruction::IN { d: parts.next().ok_or(ParseError::MissingReg)?.try_into()?, n: ImmediateN(parts.next().ok_or(ParseError::MissingImmediate)?.parse()?) });
         }
 
-        let destination: Option<RegLabel> = match parts.next().ok_or(ParseError::MissingDestination)? {
-            "-" => None,
-            s => Some(s.try_into()?),
-        };
-        dbg!(destination);
-
-        eprint!("INFO: Verb was: {verb}");
-        if is_immediate {verb = &verb[..verb.len() - 1]};
-        eprintln!(".. but is now {verb}");
+        eprintln!("INFO: Verb is: {verb}");
 
         dbg!(&parts.clone().collect::<Vec<_>>());
-        generate_parse_match!(verb, is_immediate, destination, parts,
+
+        generate_parse_match!(verb, parts,
            AND, OR, XOR, ADD, SUB, SHA, SHL, CMPLT, CMPLE, CMPEQ, CMPLTU, CMPLEU)
     }
 
