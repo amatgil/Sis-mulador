@@ -1,4 +1,4 @@
-use crate::{MemAddr, MemOffset, MemValue};
+pub use crate::*;
 
 #[derive(Debug, Clone)]
 pub enum Instruction {
@@ -121,10 +121,4 @@ pub enum Instruction {
     NOP, 
 
 }
-
-#[derive(Debug, Clone, Copy)]
-pub struct RegLabel(pub u8);
-
-#[derive(Debug, Clone, Copy)]
-pub struct ImmediateN(pub usize);
 

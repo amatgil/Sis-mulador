@@ -1,4 +1,4 @@
-use std::num::ParseIntError;
+use std::num::{ParseIntError, TryFromIntError};
 
 use crate::*;
 
@@ -76,7 +76,7 @@ impl TryFrom<&str> for Instruction {
             return Ok(Instruction::IN { d: parts.next().ok_or(ParseError::MissingReg)?.try_into()?, n: ImmediateN(parts.next().ok_or(ParseError::MissingImmediate)?.parse()?) });
         }
 
-        eprintln!("INFO: Verb is: {verb}");
+        println!("[INFO]: Verb parsed is: {verb}");
 
 
         generate_parse_match!(verb, parts,

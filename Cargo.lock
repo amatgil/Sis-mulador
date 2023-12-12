@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "SISACompiler"
+name = "SISA_sim"
 version = "0.1.0"

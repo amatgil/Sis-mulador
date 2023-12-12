@@ -1,9 +1,14 @@
 use std::collections::HashMap;
 
-use SISACompiler::{Reg, PC, MemAddr, MemValue, Processador, Instruction};
+use SISA_sim::{MemAddr, MemValue, Reg, Processador};
+pub use SISA_sim::{ProgCounter, Instruction};
+
+
+//use SISACompiler::{Reg, prog_counter, MemAddr, MemValue, Processador, Instruction};
 
 fn main() {
-    let mut memory: HashMap<MemAddr, MemValue> = HashMap::from([
+    let memory: HashMap<MemAddr, MemValue> = HashMap::from([
+       /*
         ("0x0022".try_into().unwrap(), "0x0000".try_into().unwrap()),
         ("0x0024".try_into().unwrap(), "0x0002".try_into().unwrap()),
         ("0x0026".try_into().unwrap(), "0xFFFB".try_into().unwrap()),
@@ -15,10 +20,13 @@ fn main() {
         ("0x0032".try_into().unwrap(), "0x0020".try_into().unwrap()),
         ("0x0034".try_into().unwrap(), "0x0000".try_into().unwrap()),
         ("0x0036".try_into().unwrap(), "0xFFF9".try_into().unwrap()),
+        */
     ]);
 
-    let init_pc: PC = PC(0);
-    let init_regs: [Reg; 8] = [Reg(0); 8];
+    let init_pc: ProgCounter = ProgCounter(0);
+    const EMPTY_REG: Reg = Reg(0);
+
+    let init_regs: [Reg; 8] = [EMPTY_REG; 8];
     let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
         (MemAddr(0), "MOVI R2, 0x24".try_into().unwrap()),
         (MemAddr(2), "MOVI R3, 0x94".try_into().unwrap()),
@@ -26,10 +34,8 @@ fn main() {
 
     let mut cpu = Processador::new(init_regs, memory, init_pc, instructions);
     println!("{cpu}");
-    //cpu.execute_raw(&"MOVI R2, 0x24".try_into().unwrap());
-    //cpu.execute_raw(&"MOVI R3, 0x94".try_into().unwrap());
-    cpu.execute_next();
-    cpu.execute_next();
+    cpu.execute_next(true);
+    cpu.execute_next(true);
     println!("{cpu}");
 }
 
