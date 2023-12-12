@@ -22,3 +22,7 @@ because it's invalid. If you feed it invalid input, you're gonna get UB (good lu
 
 Also, the memory and data memories are separate because I didn't stop to think before I started 
 writing down code. Just, like, assume they're the same. I'm protecting you from yourself?
+
+
+## Roadmap
+Use `as` more (note the sign extension notes when upcasting): https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions

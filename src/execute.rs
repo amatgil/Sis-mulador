@@ -12,14 +12,14 @@ const INSTRUCTS_SLOW: [&str; 4] = ["LD", "LDB", "ST", "STB"];
 impl Processador {
     pub fn new(
         init_regs: Registers,
-        init_mem: HashMap<MemAddr, MemValue>,
+        init_mem: Memory,
         init_pc: ProgCounter,
         instructions: HashMap<MemAddr, Instruction>,
         init_io: HashMap<MemAddr, Value16Bit>,
     ) -> Self {
         Self {
             regs: init_regs,
-            memory: Memory(init_mem),
+            memory:init_mem,
             pc: init_pc,
             instr_memory: instructions,
             io: init_io,
@@ -65,8 +65,8 @@ impl Processador {
             Instruction::ST  { a, b, offset } => self.memory.insert_word(&(self.regs[b].0 + se_6(offset.0)).into(), self.regs[a].0),
             Instruction::STB { a, b, offset } => self.memory.insert_byte(&(self.regs[b].0 + se_6(offset.0)).into(), (self.regs[a].0 & 0xF) as i8),
 
-            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 += se_8(offset.0) }
-            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 += se_8(offset.0) }
+            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 += se_8(offset.0) as u16 }
+            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 += se_8(offset.0) as u16 }
 
             Instruction::MOVI { d, n }        => self.regs[d].0 = se_8(n.0),
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= (n.0 as i16) << 8,
@@ -81,7 +81,7 @@ impl Processador {
 
     pub fn execute_next(&mut self, print_status: bool) {
         print_info(&format!("[INFO]: Executing instruction at PC = {}", self.pc));
-        let inst = self.instr_memory.get(&(self.pc.0).into());
+        let inst = self.instr_memory.get(&(self.pc.0 as i16).into());
         let inst = match inst {
             Some(i) => i.clone(),
             None => {
@@ -103,6 +103,9 @@ pub struct Registers(pub [Reg; 8]);
 #[derive(Debug, Clone)] pub struct Memory(HashMap<MemAddr, MemValue>);
 
 impl Memory {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
     // Little Endian: even slot has LSB and even slot + 1 has MSB
     pub fn insert_byte(&mut self, addr: &MemAddr, val: i8) {
         let _ = self.0.insert(addr.clone(), MemValue(val));
@@ -179,7 +182,7 @@ struct NumInstruccions {
 #[derive(Hash, PartialEq, Eq, Clone)] pub struct MemAddr(pub i16);
 #[derive(Clone)]                     pub struct MemValue(pub i8);
 #[derive(Clone)]                    pub struct MemOffset(pub i16);
-#[derive(Clone)]                  pub struct ProgCounter(pub i16);
+#[derive(Clone)]                  pub struct ProgCounter(pub u16);
 #[derive(Clone)]                   pub struct ImmediateN6(pub i8);
 #[derive(Clone)]                   pub struct ImmediateN8(pub i8);
 #[derive(Clone)]                   pub struct Value16Bit(pub i16);
@@ -187,7 +190,7 @@ struct NumInstruccions {
 
 impl From<ProgCounter> for MemAddr {
     fn from(value: ProgCounter) -> Self {
-        Self(norm_n(&format!("{:X}", value.0)).unwrap())
+        Self(norm_n(&format!("{:X}", value.0)).unwrap() as i16)
     }
 }
 
@@ -209,7 +212,7 @@ macro_rules! try_from_str_i8 {
         impl TryFrom<&str> for $name {
             type Error = ParseError;
             fn try_from(val: &str) -> Result<Self, ParseError> {
-                let n: i16 = norm_n(val)?;
+                let n: i16 = norm_n(val)? as i16;
                 Ok(Self(n as i8))
             }
         }
@@ -223,7 +226,7 @@ macro_rules! try_from_str_i16 {
         impl TryFrom<&str> for $name {
             type Error = ParseError;
             fn try_from(val: &str) -> Result<Self, ParseError> {
-                let n: i16 = norm_n(val)?;
+                let n: i16 = norm_n(val)? as i16;
                 Ok(Self(n))
             }
         }
@@ -231,7 +234,16 @@ macro_rules! try_from_str_i16 {
     }
 }
 
-macro_rules! other_impls {
+macro_rules! other_impls_2 {
+    ($($name:ident),*$(,)?) => {
+        $(
+            impl fmt::Display for $name { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "0x{:0>2X}", self.0) } }
+            impl fmt::Debug for $name { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.to_string()) } }
+        )*
+    }
+}
+
+macro_rules! other_impls_4 {
     ($($name:ident),*$(,)?) => {
         $(
             impl fmt::Display for $name { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "0x{:0>4X}", self.0) } }
@@ -241,9 +253,10 @@ macro_rules! other_impls {
 }
 
 try_from_str_i8!(MemValue, ImmediateN6, ImmediateN8);
-try_from_str_i16!(MemAddr, MemOffset, ProgCounter);
+try_from_str_i16!(MemAddr, MemOffset);
 
-other_impls!(MemAddr, MemValue, MemOffset, ProgCounter, ImmediateN6, ImmediateN8);
+other_impls_2!(MemValue, ImmediateN6, ImmediateN8);
+other_impls_4!(MemAddr, MemOffset, ProgCounter);
 
 impl fmt::Display for Processador {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
