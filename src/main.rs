@@ -34,10 +34,11 @@ fn main() {
         (MemAddr(6), "MOVI R0, 0x94".try_into().unwrap()),
         (MemAddr(8), "CMPEQ R0, R1, R2".try_into().unwrap()),
         (MemAddr(10), "CMPEQ R0, R1, R1".try_into().unwrap()),
+        (MemAddr(12), "SHL R0, R1, R2".try_into().unwrap()),
     ]);
 
     let mut cpu = Processador::new(
-        Registers([Reg(0), Reg(20), Reg(53), Reg(21343), Reg(523542), Reg(414), Reg(0), Reg(0)]),
+        Registers([Reg(0), Reg(20), Reg(45), Reg(21343), Reg(523542), Reg(414), Reg(0), Reg(0)]),
         memory, init_pc, instructions);
     println!("{cpu}");
     loop { cpu.execute_next(true); }

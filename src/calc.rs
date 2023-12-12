@@ -22,7 +22,12 @@ impl Shl for Reg {
     type Output = Self;
 
     fn shl(self, rhs: Self) -> Self::Output {
-        let lsbs: Vec<bool> = rhs.0.to_string().chars().rev().take(5).map(|b| b == '1').collect();
+        let lsbs = rhs.0 & 0b01111;
+        let sign = rhs.0 & 0b10000;
         dbg!(self.0, rhs.0, lsbs);
+        let n = if sign > 0 { self.0 >> lsbs  } // rhs is negative, we shift right
+        else { self.0 << lsbs };                // rhs is positive, we shift left
+
+        Reg(n)
     }
 }
