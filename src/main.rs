@@ -59,9 +59,7 @@ fn main() {
         io_system,
     );
     println!("{cpu}");
-    loop {
-        cpu.execute_next(true);
-    }
+    loop { cpu.execute_next(true); }
 }
 
 const SAMPLE_INPUT: &str = "IN R0, 0001

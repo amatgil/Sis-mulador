@@ -6,6 +6,8 @@ use std::{
 
 use crate::{norm_n, Instruction, ParseError};
 
+const DEFAULT_MEMORY_WORD: i16 = 0x0000;
+
 impl Processador {
     pub fn new(
         init_regs: Registers,
@@ -42,7 +44,10 @@ impl Processador {
             Instruction::CMPLTU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) < transmute(self.regs[b].0)) as i16 },
             Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) <= transmute(self.regs[b].0)) as i16 },
 
-            Instruction::LD { a, d, offset }  => _ = self.regs[d].0 = self.memory.get(&MemAddr(offset.0 + self.regs[a].0)).expect("tried loading from non-existant memory").0,
+            Instruction::LD { a, d, offset }  => _ = self.regs[d].0 = self.memory.get(&MemAddr(offset.0 + self.regs[a].0)).unwrap_or_else(|| &MemValue( {
+                println!("[INFO]: Tried to access uninitialized memory at addr: '{}'", offset.0 + self.regs[a].0);
+                DEFAULT_MEMORY_WORD // We use the default instead of crashing
+            })).0, 
             Instruction::ST { a, d, offset }  => _ = self.memory.insert(MemAddr(self.regs[d].0 + offset.0), MemValue(self.regs[a].0)),
             Instruction::LDB { a, d, offset } => todo!(),
             Instruction::STB { a, d, offset } => todo!(),
@@ -62,8 +67,14 @@ impl Processador {
     }
 
     pub fn execute_next(&mut self, print_status: bool) {
-        println!("[INFO]: Executing instruction at PC = {}", self.pc);
-        let inst = self.instr_memory[&MemAddr(self.pc.0)].clone();
+        println!("[INFO]: Executing instruction at PC = 0x{}", self.pc);
+        let inst = self.instr_memory.get(&MemAddr(self.pc.0));
+        let inst = match inst {
+            Some(i) => i.clone(),
+            None => 
+                panic!("There was no instruction to read when the PC = {} (dec '{}'). Instead of devolving into gibberish, the simulation has shut down 'gracefully' (for some definition of 'gracefully')",
+                self.pc, self.pc.0),
+        };
         self.execute_raw(&inst);
         self.pc.advance();
         if print_status {
@@ -175,10 +186,4 @@ fn sign_extend(n: &MemValue) -> MemValue {
     print!("[INFO]: Sign extended 0x{:0>4X} into 0x{:0>4X}", n.0, val);
 
     MemValue(val)
-}
-fn sign_extend_8(n: &i8) -> isize {
-    let val = *n as isize;
-    print!("[INFO]: Sign extended 0x{:0>4X} into 0x{:0>4X}", n, val);
-
-    val
 }
