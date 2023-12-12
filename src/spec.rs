@@ -44,27 +44,27 @@ pub enum Instruction {
     },
 
     /// OP == 01
-    CMPLT{
+    CMPLT {
         a: RegLabel,
         b: RegLabel,
         d: RegLabel,
     },
-    CMPLE{
+    CMPLE {
         a: RegLabel,
         b: RegLabel,
         d: RegLabel,
     },
-    CMPEQ{
+    CMPEQ {
         a: RegLabel,
         b: RegLabel,
         d: RegLabel,
     },
-    CMPLTU{
+    CMPLTU {
         a: RegLabel,
         b: RegLabel,
         d: RegLabel,
     },
-    CMPLEU{
+    CMPLEU {
         a: RegLabel,
         b: RegLabel,
         d: RegLabel,
@@ -102,23 +102,21 @@ pub enum Instruction {
         a: RegLabel,
         offset: ImmediateN,
     },
-    MOVI { 
+    MOVI {
         d: RegLabel,
         n: MemValue,
     },
-    MOVHI { 
+    MOVHI {
         d: RegLabel,
         n: MemValue,
     },
     IN {
         d: RegLabel,
-        n: ImmediateN,
+        n: MemAddr,
     },
     OUT {
         d: RegLabel,
-        n: ImmediateN,
+        n: MemAddr,
     },
-    NOP, 
-
+    NOP,
 }
-

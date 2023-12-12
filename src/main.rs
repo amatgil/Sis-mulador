@@ -1,9 +1,7 @@
-
 use std::{collections::HashMap, default};
 
-use SISA_sim::{MemAddr, MemValue, Reg, Processador, Registers};
-pub use SISA_sim::{ProgCounter, Instruction};
-
+pub use SISA_sim::{Instruction, ProgCounter};
+use SISA_sim::{MemAddr, MemValue, Processador, Reg, Registers};
 
 //use SISACompiler::{Reg, prog_counter, MemAddr, MemValue, Processador, Instruction};
 
@@ -28,7 +26,6 @@ fn main() {
     let init_pc: ProgCounter = ProgCounter(0);
 
     let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
-        //(MemAddr(0), "MOVI R2, 0x24".try_into().unwrap()),
         (MemAddr(0), "AND R0, R1, R3".try_into().unwrap()),
         (MemAddr(2), "OR R0, R1, R3".try_into().unwrap()),
         (MemAddr(4), "XOR R0, R1, R3".try_into().unwrap()),
@@ -36,17 +33,32 @@ fn main() {
         (MemAddr(8), "CMPEQ R0, R1, R2".try_into().unwrap()),
         (MemAddr(10), "CMPEQ R0, R1, R1".try_into().unwrap()),
         (MemAddr(12), "SHL R0, R1, R2".try_into().unwrap()),
+        (MemAddr(14), "OUT R0, 0x1234".try_into().unwrap()),
     ]);
 
     let mut cpu = Processador::new(
-        Registers([Reg(0), Reg(20), Reg(45), Reg(21343), Reg(523542), Reg(414), Reg(0), Reg(0)]),
-        memory, init_pc, instructions, io_system);
+        Registers([
+            Reg(0),
+            Reg(20),
+            Reg(45),
+            Reg(21343),
+            Reg(523542),
+            Reg(414),
+            Reg(0),
+            Reg(0),
+        ]),
+        memory,
+        init_pc,
+        instructions,
+        io_system,
+    );
     println!("{cpu}");
-    loop { cpu.execute_next(true); }
+    loop {
+        cpu.execute_next(true);
+    }
 }
 
-const INPUT: &str =
-"IN R0, 0001
+const SAMPLE_INPUT: &str = "IN R0, 0001
 BZ R0, -2
 IN R0, 0005
 MOVI R2, 0x24
@@ -63,5 +75,3 @@ STB 0(R3), R4
 ADDI R2,R2,2
 ADDI R1,R1,-1
 BNZ R1, -8";
-
-
