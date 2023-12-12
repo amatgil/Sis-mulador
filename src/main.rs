@@ -23,7 +23,7 @@ fn main() {
     ]);
 
     let io_system: HashMap<MemAddr, Value16Bit> = HashMap::new();
-    let init_pc: ProgCounter = ProgCounter(28);
+    let init_pc: ProgCounter = ProgCounter(0);
 
     let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
         (MemAddr(0), "AND R0, R1, R2".try_into().unwrap()),
