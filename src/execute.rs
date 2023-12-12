@@ -7,6 +7,7 @@ use std::{
 use crate::{norm_n, Instruction, ParseError, print_info};
 
 const DEFAULT_MEMORY_WORD: i16 = 0x0000;
+const INSTRUCTS_SLOW: [&str; 4] = ["LD", "LDB", "ST", "STB"];
 
 impl Processador {
     pub fn new(
@@ -22,11 +23,20 @@ impl Processador {
             pc: init_pc,
             instr_memory: instructions,
             io: init_io,
+            instrs_fetes: NumInstruccions::default(),
         }
     }
     #[rustfmt::skip]
     pub fn execute_raw(&mut self, inst: &Instruction) {
         println!("[INFO]: Running \x1b[1;4;32m{:?}\x1b[0m", inst);
+
+        if INSTRUCTS_SLOW.contains(&&*inst.get_verb()) {
+            print_info("This instruction is SLOW (memory)"); 
+            self.instrs_fetes.slow += 1;
+        } else {
+            print_info("This instruction is FAST (memory)"); 
+            self.instrs_fetes.fast += 1;
+        }
         match inst {
             Instruction::AND { a, b, d }      => self.regs[d].0 = self.regs[a].0 & self.regs[b].0,
             Instruction::OR { a, b, d }       => self.regs[d].0 = self.regs[a].0 | self.regs[b].0,
@@ -74,9 +84,11 @@ impl Processador {
         let inst = self.instr_memory.get(&(self.pc.0).into());
         let inst = match inst {
             Some(i) => i.clone(),
-            None => 
+            None => {
+                println!("The number of instructions done is: {:?}", self.instrs_fetes);
                 panic!("There was no instruction to read when the PC = {} (dec '{}'). Instead of devolving into gibberish, the simulation has shut down 'gracefully' (for some definition of 'gracefully')",
-                self.pc, self.pc.0),
+                self.pc, self.pc.0);
+            },
         };
         self.execute_raw(&inst);
         self.pc.advance();
@@ -153,6 +165,13 @@ pub struct Processador {
     io: HashMap<MemAddr, Value16Bit>,
     instr_memory: HashMap<MemAddr, Instruction>,
     pc: ProgCounter,
+    instrs_fetes: NumInstruccions,
+}
+
+#[derive(Clone, Debug, Default)]
+struct NumInstruccions {
+    fast: usize,
+    slow: usize,
 }
 
 #[rustfmt::skip] 

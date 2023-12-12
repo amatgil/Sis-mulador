@@ -120,3 +120,35 @@ pub enum Instruction {
     },
     NOP,
 }
+
+impl Instruction {
+    pub fn get_verb(&self) -> String {
+        match self {
+            Instruction::AND    { .. } => "AND",
+            Instruction::OR     { .. } => "OR",
+            Instruction::XOR    { .. } => "XOR",
+            Instruction::NOT    { .. } => "NOT",
+            Instruction::ADD    { .. } => "ADD",
+            Instruction::SUB    { .. } => "SUB",
+            Instruction::SHA    { .. } => "SHA",
+            Instruction::SHL    { .. } => "SHL",
+            Instruction::CMPLT  { .. } => "CMPLT",
+            Instruction::CMPLE  { .. } => "CMPLE",
+            Instruction::CMPEQ  { .. } => "CMPEQ",
+            Instruction::CMPLTU { .. } => "CMPLTU",
+            Instruction::CMPLEU { .. } => "CMPLEU",
+            Instruction::ADDI   { .. } => "ADDI",
+            Instruction::LD     { .. } => "LD",
+            Instruction::LDB    { .. } => "LDB",
+            Instruction::ST     { .. } => "ST",
+            Instruction::STB    { .. } => "STB",
+            Instruction::BZ     { .. } => "BZ",
+            Instruction::BNZ    { .. } => "BNZ",
+            Instruction::MOVI   { .. } => "MOVI",
+            Instruction::MOVHI  { .. } => "MOVHI",
+            Instruction::IN     { .. } => "IN",
+            Instruction::OUT    { .. } => "OUT",
+            Instruction::NOP           => "NOP",
+        }.into()
+    }
+}
