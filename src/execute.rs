@@ -67,7 +67,7 @@ impl Processador {
     }
 
     pub fn execute_next(&mut self, print_status: bool) {
-        println!("[INFO]: Executing instruction at PC = 0x{}", self.pc);
+        println!("[INFO]: Executing instruction at PC = {}", self.pc);
         let inst = self.instr_memory.get(&MemAddr(self.pc.0));
         let inst = match inst {
             Some(i) => i.clone(),
