@@ -3,7 +3,7 @@ use std::{collections::HashMap, default, mem::transmute};
 pub use SISA_sim::{Instruction, ProgCounter};
 use SISA_sim::{MemAddr, MemValue, Processador, Reg, Registers, Value16Bit, Memory, norm_n};
 
-const SAMPLE_INPUT: &str = 
+const MY_INPUT: &str = 
 "IN R0, 0
 BZ R0, -2
 IN R0, 1
@@ -22,6 +22,10 @@ ADDI R2, R2, 2
 ADDI R1, R1, -1
 BNZ R1, -8";
 
+const ELOI_INPUT: &str =
+"
+";
+
 fn main() {
     let pre_memory: HashMap<&str, &str> = HashMap::from([
         ("0x0022", "0x0000"),
@@ -36,7 +40,7 @@ fn main() {
         ("0x0034", "0x0000"),
         ("0x0036", "0xFFF9"),
     ]);
-    
+
     let mut memory = Memory::new();
     pre_memory.iter().for_each(|(m, v)| {
         println!("Pushing {m}, {v}");
@@ -45,7 +49,7 @@ fn main() {
             &MemAddr(norm_n(m).unwrap() as i16),
             norm_n(v).unwrap() as i16)
     });
-    dbg!(&memory);
+    println!("{memory}");
 
     let io_system: HashMap<MemAddr, Value16Bit> = HashMap::from([
         (MemAddr(0), Value16Bit(0x0001)), // Key Status == 0
@@ -54,7 +58,7 @@ fn main() {
     let init_pc: ProgCounter = ProgCounter(0);
 
     let instructions: HashMap<MemAddr, Instruction> = 
-        SAMPLE_INPUT.lines().enumerate()
+        MY_INPUT.lines().enumerate()
         .map(|(i, line)| {
             println!("{i} -- {line}");
             (MemAddr((i * 2) as i16), line.try_into().unwrap())

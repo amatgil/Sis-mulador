@@ -13,7 +13,7 @@ pub fn norm_n(input: &str) -> Result<u16, ParseIntError> {
     if input.len() <= 2 || &input[..2] != "0x" { // Is dec here
         if input.chars().next().unwrap() == '-' {
             Ok(
-                -((input[1..].parse::<u16>()?) as i16) as u16
+                (-((input[1..].parse::<i16>()?))) as u16
             )
         } else {
             input.parse()
