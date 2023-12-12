@@ -26,31 +26,37 @@ impl Processador {
     pub fn execute_raw(&mut self, inst: &Instruction) {
         println!("[INFO]: Running {inst:?}");
         match inst {
-            Instruction::AND { a, b, d }    => { self.regs[d].0 = self.regs[a].0 & self.regs[b].0; }
-            Instruction::OR { a, b, d }     => { self.regs[d].0 = self.regs[a].0 | self.regs[b].0; }
-            Instruction::XOR { a, b, d }    => { self.regs[d].0 = self.regs[a].0 ^ self.regs[b].0; }
-            Instruction::NOT { a, d }       => self.regs[d].0 = !self.regs[a].0,
-            Instruction::ADD { a, b, d }    => self.regs[d] = self.regs[a] + self.regs[b],
-            Instruction::ADDI { a, b, d }   => self.regs[d].0 = self.regs[a].0 + b.0,
-            Instruction::SUB { a, b, d }    => self.regs[d] = self.regs[a] - self.regs[b],
-            Instruction::SHA { a, b, d }    => todo!(),
-            Instruction::SHL { a, b, d }    => self.regs[d] = self.regs[a] << self.regs[b], // Implemented to do it using the last 5 bits
-            Instruction::CMPEQ { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as isize }
-            Instruction::CMPLT  { a, b, d } => { self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as isize }
-            Instruction::CMPLE  { a, b, d } => { self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as isize }
-            Instruction::CMPLTU { a, b, d } => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) < transmute(self.regs[b].0)) as isize }
-            Instruction::CMPLEU { a, b, d } => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) <= transmute(self.regs[b].0)) as isize }
-            Instruction::LD { a, b, d }     => todo!(),
-            Instruction::ST { a, b, d }     => todo!(),
-            Instruction::LDB { a, b, d }    => todo!(),
-            Instruction::STB { d, x, addr } => todo!(),
-            Instruction::BZ { a, offset }   => todo!(),
-            Instruction::BNZ { a, offset }  => todo!(),
-            Instruction::MOVI { d, n }      => self.regs[d].0 = sign_extend(n).0,
-            Instruction::MOVHI { d, n }     => todo!(),
-            Instruction::IN { d, n }        => { self.regs[d].0 = self.io[n].0}
-            Instruction::OUT { d, n }       => { println!("[OUTPUT]: value '0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[d].0, n)}
-            Instruction::NOP                => {}
+            Instruction::AND { a, b, d }      => self.regs[d].0 = self.regs[a].0 & self.regs[b].0,
+            Instruction::OR { a, b, d }       => self.regs[d].0 = self.regs[a].0 | self.regs[b].0,
+            Instruction::XOR { a, b, d }      => self.regs[d].0 = self.regs[a].0 ^ self.regs[b].0,
+            Instruction::NOT { a, d }         => self.regs[d].0 = !self.regs[a].0,
+            Instruction::ADD { a, b, d }      => self.regs[d] = self.regs[a] + self.regs[b],
+            Instruction::ADDI { a, b, d }     => self.regs[d].0 = self.regs[a].0 + b.0,
+            Instruction::SUB { a, b, d }      => self.regs[d] = self.regs[a] - self.regs[b],
+            Instruction::SHA { a, b, d }      => todo!(),
+            Instruction::SHL { a, b, d }      => self.regs[d] = self.regs[a] << self.regs[b], // Implemented to do it using the last 5 bits
+
+            Instruction::CMPEQ { a, b, d }    => self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as isize,
+            Instruction::CMPLT  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as isize,
+            Instruction::CMPLE  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as isize,
+            Instruction::CMPLTU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) < transmute(self.regs[b].0)) as isize },
+            Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) <= transmute(self.regs[b].0)) as isize },
+
+            Instruction::LD { a, d, offset }  => _ = self.regs[d].0 = self.memory.get(&MemAddr(self.regs[a].0 as usize)).expect("tried loading from non-existant memory").0,
+            Instruction::ST { a, d, offset }  => _ = self.memory.insert(MemAddr((self.regs[d].0 + offset.0) as usize), MemValue(self.regs[a].0)),
+            Instruction::LDB { a, d, offset } => todo!(),
+            Instruction::STB { a, d, offset } => todo!(),
+
+            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 = (self.pc.0 as isize + offset.0) as usize}
+            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 = (self.pc.0 as isize + offset.0) as usize}
+
+            Instruction::MOVI { d, n }        => self.regs[d].0 = sign_extend(n).0,
+            Instruction::MOVHI { d, n }       => self.regs[d].0 |= n.0 << 8,
+
+            Instruction::IN { d, n }          => self.regs[d].0 = self.io[n].0,
+            Instruction::OUT { d, n }         => println!("[OUTPUT]: value '0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[d].0, n),
+
+            Instruction::NOP                  => {}
         }
         println!();
     }

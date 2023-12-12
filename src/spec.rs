@@ -75,24 +75,24 @@ pub enum Instruction {
         d: RegLabel,
     },
     LD {
-        a: RegLabel,
-        b: ImmediateN,
         d: RegLabel,
+        a: RegLabel,
+        offset: ImmediateN,
+    },
+    LDB {
+        d: RegLabel,
+        a: RegLabel,
+        offset: ImmediateN,
     },
     ST {
         a: RegLabel,
-        b: RegLabel,
-        d: ImmediateN,
-    },
-    LDB {
-        a: RegLabel,
-        b: ImmediateN,
+        offset: ImmediateN,
         d: RegLabel,
     },
     STB {
+        a: RegLabel,
+        offset: ImmediateN,
         d: RegLabel,
-        x: RegLabel,
-        addr: ImmediateN,
     },
     BZ {
         a: RegLabel,
