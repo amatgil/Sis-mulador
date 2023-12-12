@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fmt,
-    ops::{Index, IndexMut},
+    ops::{Index, IndexMut}, mem::transmute,
 };
 
 use crate::{norm_n, Instruction, ParseError};
@@ -36,10 +36,10 @@ impl Processador {
             Instruction::SHA { a, b, d }    => todo!(),
             Instruction::SHL { a, b, d }    => self.regs[d] = self.regs[a] << self.regs[b], // Implemented to do it using the last 5 bits
             Instruction::CMPEQ { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as usize }
-            Instruction::CMPLT { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as usize }
-            Instruction::CMPLE { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as usize }
-            Instruction::CMPLTU { a, b, d } => { todo!() }
-            Instruction::CMPLEU { a, b, d } => { todo!() }
+            Instruction::CMPLTU { a, b, d } => { self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as usize }
+            Instruction::CMPLEU { a, b, d } => { self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as usize }
+            Instruction::CMPLT  { a, b, d } => unsafe { self.regs[d].0 = (transmute::<usize, isize>(self.regs[a].0) < transmute(self.regs[b].0)) as usize }
+            Instruction::CMPLE  { a, b, d } => unsafe { self.regs[d].0 = (transmute::<usize, isize>(self.regs[a].0) <= transmute(self.regs[b].0)) as usize }
             Instruction::LD { a, b, d }     => todo!(),
             Instruction::ST { a, b, d }     => todo!(),
             Instruction::LDB { a, b, d }    => todo!(),

@@ -4,6 +4,9 @@ The types are self explanatory, just mess around with `main` ig.
 
 The code is incredibly self documenting (on purpose).
 
+I also use `transmute` a lot to interpret the bits into the way I want. Such is the way
+of low level code.
+
 # NOTE
 It assumes the input is wellformed. Do not feed it instuctions like
 

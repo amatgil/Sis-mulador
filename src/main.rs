@@ -1,4 +1,4 @@
-use std::{collections::HashMap, default};
+use std::{collections::HashMap, default, mem::transmute};
 
 pub use SISA_sim::{Instruction, ProgCounter};
 use SISA_sim::{MemAddr, MemValue, Processador, Reg, Registers};
@@ -26,6 +26,7 @@ fn main() {
     let init_pc: ProgCounter = ProgCounter(0);
 
     let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
+        /*
         (MemAddr(0), "AND R0, R1, R3".try_into().unwrap()),
         (MemAddr(2), "OR R0, R1, R3".try_into().unwrap()),
         (MemAddr(4), "XOR R0, R1, R3".try_into().unwrap()),
@@ -34,17 +35,20 @@ fn main() {
         (MemAddr(10), "CMPEQ R0, R1, R1".try_into().unwrap()),
         (MemAddr(12), "SHL R0, R1, R2".try_into().unwrap()),
         (MemAddr(14), "OUT R0, 0x1234".try_into().unwrap()),
+        */
+        (MemAddr(0), "CMPLT R0, R1, R2".try_into().unwrap()), // False
+        (MemAddr(2), "CMPLTU R0, R1, R2".try_into().unwrap()), // Teue
     ]);
 
     let mut cpu = Processador::new(
         Registers([
             Reg(0),
-            Reg(20),
-            Reg(45),
-            Reg(21343),
-            Reg(523542),
-            Reg(414),
-            Reg(0),
+            Reg(2),
+            Reg(unsafe{ transmute(-2_isize) }),
+            Reg(3),
+            Reg(unsafe{ transmute(-3_isize) }),
+            Reg(4),
+            Reg(unsafe{ transmute(-5_isize) }),
             Reg(0),
         ]),
         memory,
