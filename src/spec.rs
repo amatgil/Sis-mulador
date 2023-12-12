@@ -104,11 +104,11 @@ pub enum Instruction {
     },
     MOVI {
         d: RegLabel,
-        n: MemValue,
+        n: ImmediateN8,
     },
     MOVHI {
         d: RegLabel,
-        n: MemValue,
+        n: ImmediateN8,
     },
     IN {
         d: RegLabel,

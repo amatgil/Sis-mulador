@@ -1,7 +1,7 @@
 use std::{collections::HashMap, default, mem::transmute};
 
 pub use SISA_sim::{Instruction, ProgCounter};
-use SISA_sim::{MemAddr, MemValue, Processador, Reg, Registers};
+use SISA_sim::{MemAddr, MemValue, Processador, Reg, Registers, Value16Bit};
 
 //use SISACompiler::{Reg, prog_counter, MemAddr, MemValue, Processador, Instruction};
 
@@ -22,13 +22,14 @@ fn main() {
         */
     ]);
 
-    let io_system: HashMap<MemAddr, MemValue> = HashMap::new();
-    let init_pc: ProgCounter = ProgCounter(0);
+    let io_system: HashMap<MemAddr, Value16Bit> = HashMap::new();
+    let init_pc: ProgCounter = ProgCounter(28);
 
     let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
         (MemAddr(0), "AND R0, R1, R2".try_into().unwrap()),
         (MemAddr(2), "OR R0, R1, R2".try_into().unwrap()),
         (MemAddr(4), "XOR R0, R1, R2".try_into().unwrap()),
+        (MemAddr(6), "NOP".try_into().unwrap()),
         (MemAddr(6), "MOVI R0, 0x94".try_into().unwrap()),
         (MemAddr(8), "CMPEQ R0, R1, R2".try_into().unwrap()),
         (MemAddr(10), "CMPEQ R0, R1, R1".try_into().unwrap()),

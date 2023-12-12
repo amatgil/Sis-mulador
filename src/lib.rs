@@ -10,12 +10,15 @@ pub use spec::*;
 pub use std::num::ParseIntError;
 
 pub fn norm_n(input: &str) -> Result<i16, ParseIntError> {
-    if input.len() <= 2 || &input[..2] != "0x" {
+    if input.len() <= 2 || &input[..2] != "0x" { // Is dec here
         input.parse()
     } else {
-        // Is dec here
         i16::from_str_radix(&input[2..], 16)
     }
+}
+
+pub fn print_info(info: &str) {
+    println!("[INFO]: \x1b[37m{}\x1b[0m",info);
 }
 
 #[test]

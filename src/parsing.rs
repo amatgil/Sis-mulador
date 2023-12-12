@@ -100,7 +100,7 @@ impl TryFrom<&str> for Instruction {
         let value = value.replace("(", " ");
         let mut parts = value.split(" ");
         let verb = parts.next().ok_or(ParseError::MissingVerb)?;
-        println!("[INFO]: Verb parsed is: {verb}");
+        print_info(&format!("[INFO]: Verb parsed is: {verb}"));
 
         // Special cases
         if verb == "NOP" {
