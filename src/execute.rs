@@ -35,11 +35,11 @@ impl Processador {
             Instruction::SUB { a, b, d }    => self.regs[d] = self.regs[a] - self.regs[b],
             Instruction::SHA { a, b, d }    => todo!(),
             Instruction::SHL { a, b, d }    => self.regs[d] = self.regs[a] << self.regs[b], // Implemented to do it using the last 5 bits
-            Instruction::CMPEQ { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as usize }
-            Instruction::CMPLTU { a, b, d } => { self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as usize }
-            Instruction::CMPLEU { a, b, d } => { self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as usize }
-            Instruction::CMPLT  { a, b, d } => unsafe { self.regs[d].0 = (transmute::<usize, isize>(self.regs[a].0) < transmute(self.regs[b].0)) as usize }
-            Instruction::CMPLE  { a, b, d } => unsafe { self.regs[d].0 = (transmute::<usize, isize>(self.regs[a].0) <= transmute(self.regs[b].0)) as usize }
+            Instruction::CMPEQ { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as isize }
+            Instruction::CMPLT  { a, b, d } => { self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as isize }
+            Instruction::CMPLE  { a, b, d } => { self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as isize }
+            Instruction::CMPLTU { a, b, d } => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) < transmute(self.regs[b].0)) as isize }
+            Instruction::CMPLEU { a, b, d } => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) <= transmute(self.regs[b].0)) as isize }
             Instruction::LD { a, b, d }     => todo!(),
             Instruction::ST { a, b, d }     => todo!(),
             Instruction::LDB { a, b, d }    => todo!(),
@@ -97,19 +97,19 @@ pub struct Processador {
 }
 
 #[derive(Clone, Copy)]
-pub struct Reg(pub usize);
+pub struct Reg(pub isize);
 #[derive(Hash, PartialEq, Eq, Clone)]
 pub struct MemAddr(pub usize);
 #[derive(Clone)]
-pub struct MemValue(pub usize);
+pub struct MemValue(pub isize);
 #[derive(Clone)]
-pub struct MemOffset(pub usize);
+pub struct MemOffset(pub isize);
 #[derive(Clone)]
 pub struct ProgCounter(pub usize);
 #[derive(Debug, Clone)]
 pub struct RegLabel(pub u8);
 #[derive(Clone)]
-pub struct ImmediateN(pub usize);
+pub struct ImmediateN(pub isize);
 
 impl From<ProgCounter> for MemAddr {
     fn from(value: ProgCounter) -> Self {
@@ -130,7 +130,7 @@ macro_rules! try_from_str {
             type Error = ParseError;
             fn try_from(val: &str) -> Result<Self, ParseError> {
                 let n = norm_n(val)?;
-                Ok(Self(n))
+                Ok(Self(n.try_into().unwrap()))
             }
         }
         )*

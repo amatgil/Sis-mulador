@@ -26,18 +26,16 @@ fn main() {
     let init_pc: ProgCounter = ProgCounter(0);
 
     let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
-        /*
-        (MemAddr(0), "AND R0, R1, R3".try_into().unwrap()),
-        (MemAddr(2), "OR R0, R1, R3".try_into().unwrap()),
-        (MemAddr(4), "XOR R0, R1, R3".try_into().unwrap()),
+        (MemAddr(0), "AND R0, R1, R2".try_into().unwrap()),
+        (MemAddr(2), "OR R0, R1, R2".try_into().unwrap()),
+        (MemAddr(4), "XOR R0, R1, R2".try_into().unwrap()),
         (MemAddr(6), "MOVI R0, 0x94".try_into().unwrap()),
         (MemAddr(8), "CMPEQ R0, R1, R2".try_into().unwrap()),
         (MemAddr(10), "CMPEQ R0, R1, R1".try_into().unwrap()),
         (MemAddr(12), "SHL R0, R1, R2".try_into().unwrap()),
         (MemAddr(14), "OUT R0, 0x1234".try_into().unwrap()),
-        */
-        (MemAddr(0), "CMPLT R0, R1, R2".try_into().unwrap()), // False
-        (MemAddr(2), "CMPLTU R0, R1, R2".try_into().unwrap()), // Teue
+        (MemAddr(16), "CMPLT R0, R1, R2".try_into().unwrap()), // False
+        (MemAddr(18), "CMPLTU R0, R1, R2".try_into().unwrap()), // True
     ]);
 
     let mut cpu = Processador::new(
