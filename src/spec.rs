@@ -71,36 +71,36 @@ pub enum Instruction {
     },
     ADDI {
         a: RegLabel,
-        b: ImmediateN,
+        b: ImmediateN6,
         d: RegLabel,
     },
     LD {
         d: RegLabel,
         a: RegLabel,
-        offset: ImmediateN,
+        offset: ImmediateN6,
     },
     LDB {
         d: RegLabel,
         a: RegLabel,
-        offset: ImmediateN,
+        offset: ImmediateN6,
     },
     ST {
-        offset: ImmediateN,
-        d: RegLabel,
+        offset: ImmediateN6,
         a: RegLabel,
+        b: RegLabel,
     },
     STB {
+        offset: ImmediateN6,
         a: RegLabel,
-        offset: ImmediateN,
-        d: RegLabel,
+        b: RegLabel,
     },
     BZ {
         a: RegLabel,
-        offset: ImmediateN,
+        offset: ImmediateN8,
     },
     BNZ {
         a: RegLabel,
-        offset: ImmediateN,
+        offset: ImmediateN8,
     },
     MOVI {
         d: RegLabel,

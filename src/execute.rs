@@ -18,7 +18,7 @@ impl Processador {
     ) -> Self {
         Self {
             regs: init_regs,
-            memory: init_mem,
+            memory: Memory(init_mem),
             pc: init_pc,
             instr_memory: instructions,
             io: init_io,
@@ -33,9 +33,9 @@ impl Processador {
             Instruction::XOR { a, b, d }      => self.regs[d].0 = self.regs[a].0 ^ self.regs[b].0,
             Instruction::NOT { a, d }         => self.regs[d].0 = !self.regs[a].0,
             Instruction::ADD { a, b, d }      => self.regs[d] = self.regs[a] + self.regs[b],
-            Instruction::ADDI { a, b, d }     => self.regs[d].0 = self.regs[a].0 + b.0,
+            Instruction::ADDI { a, b, d }     => self.regs[d].0 = self.regs[a].0 + se_6(b),
             Instruction::SUB { a, b, d }      => self.regs[d] = self.regs[a] - self.regs[b],
-            Instruction::SHA { a, b, d }      => todo!(),
+            Instruction::SHA { a, b, d }      => self.regs[d] = self.regs[a].sha(self.regs[b]),
             Instruction::SHL { a, b, d }      => self.regs[d] = self.regs[a] << self.regs[b], // Implemented to do it using the last 5 bits
 
             Instruction::CMPEQ { a, b, d }    => self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as i16,
@@ -44,16 +44,19 @@ impl Processador {
             Instruction::CMPLTU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) < transmute(self.regs[b].0)) as i16 },
             Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) <= transmute(self.regs[b].0)) as i16 },
 
-            Instruction::LD { a, d, offset }  => _ = self.regs[d].0 = self.memory.get(&MemAddr(offset.0 + self.regs[a].0)).unwrap_or_else(|| &MemValue( {
-                println!("[INFO]: Tried to access uninitialized memory at addr: '{}'", offset.0 + self.regs[a].0);
+            Instruction::LD { a, d, offset }  => self.regs[d].0 = self.memory.get_word(&(se_6(offset) + self.regs[a].0).into()).unwrap_or_else(|| MemValue( {
+                println!("[INFO]: Tried to access uninitialized memory (WORD) at addr: '{}'", se_6(offset) + self.regs[a].0);
                 DEFAULT_MEMORY_WORD // We use the default instead of crashing
             })).0, 
-            Instruction::ST { a, d, offset }  => _ = self.memory.insert(MemAddr(self.regs[d].0 + offset.0), MemValue(self.regs[a].0)),
-            Instruction::LDB { a, d, offset } => todo!(),
-            Instruction::STB { a, d, offset } => todo!(),
+            Instruction::LDB { a, d, offset } => self.regs[d].0 = self.memory.get_byte(&(se_6(offset) + self.regs[a].0).into()).unwrap_or_else(|| MemValue( {
+                println!("[INFO]: Tried to access uninitialized memory (BYTE) at addr: '{}'", se_6(offset) + self.regs[a].0);
+                DEFAULT_MEMORY_WORD // We use the default instead of crashing
+            })).0, 
+            Instruction::ST  { a, b, offset } => self.memory.insert_word(&(self.regs[b].0 + se_6(offset)).into(), MemValue(self.regs[a].0)),
+            Instruction::STB { a, b, offset } => self.memory.insert_byte(&(self.regs[b].0 + se_6(offset)).into(), MemValue(self.regs[a].0)),
 
-            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 += offset.0 }
-            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 += offset.0 }
+            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 += se_8(offset) }
+            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 += se_8(offset) }
 
             Instruction::MOVI { d, n }        => self.regs[d].0 = sign_extend(n).0,
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= n.0 << 8,
@@ -68,7 +71,7 @@ impl Processador {
 
     pub fn execute_next(&mut self, print_status: bool) {
         println!("[INFO]: Executing instruction at PC = {}", self.pc);
-        let inst = self.instr_memory.get(&MemAddr(self.pc.0));
+        let inst = self.instr_memory.get(&(self.pc.0).into());
         let inst = match inst {
             Some(i) => i.clone(),
             None => 
@@ -85,6 +88,36 @@ impl Processador {
 }
 
 pub struct Registers(pub [Reg; 8]);
+#[derive(Debug, Clone)] pub struct Memory(HashMap<MemAddr, MemValue>);
+
+impl Memory {
+    // Little Endian: even slot has LSB and even slot + 1 has MSB
+    pub fn insert_byte(&mut self, addr: &MemAddr, val: MemValue) {
+        todo!()
+    }
+    pub fn insert_word(&mut self, addr: &MemAddr, val: MemValue) {
+        let addr = addr.align();
+        todo!()
+    }
+    pub fn get_byte(&self, addr: &MemAddr) -> Option<MemValue> {
+        todo!()
+    }
+    pub fn get_word(&self, addr: &MemAddr) -> Option<MemValue> {
+        let addr = addr.align();
+        todo!()
+    }
+}
+
+impl MemAddr {
+    /// Returns new address, but aligned instead. Does not require mutable access and instead
+    /// returns the new value for better ergonomics when dealing with immutable addrs.
+    fn align(&self) -> Self {
+        //let addr = MemAddr(self.0 - (self.0 % 2));
+        let addr = MemAddr(self.0 & !1);
+
+        addr
+    }
+}
 
 impl Default for Registers {
     fn default() -> Self {
@@ -108,30 +141,31 @@ impl IndexMut<&RegLabel> for Registers {
 
 pub struct Processador {
     regs: Registers,
-    memory: HashMap<MemAddr, MemValue>,
+    memory: Memory,
     io: HashMap<MemAddr, MemValue>,
     instr_memory: HashMap<MemAddr, Instruction>,
     pc: ProgCounter,
 }
 
-#[derive(Clone, Copy)]
-pub struct Reg(pub i16);
-#[derive(Hash, PartialEq, Eq, Clone)]
-pub struct MemAddr(pub i16);
-#[derive(Clone)]
-pub struct MemValue(pub i16);
-#[derive(Clone)]
-pub struct MemOffset(pub i16);
-#[derive(Clone)]
-pub struct ProgCounter(pub i16);
-#[derive(Debug, Clone)]
-pub struct RegLabel(pub u8);
-#[derive(Clone)]
-pub struct ImmediateN(pub i16);
+#[rustfmt::skip] 
+#[derive(Clone, Copy)]                    pub struct Reg(pub i16);
+#[derive(Hash, PartialEq, Eq, Clone)] pub struct MemAddr(pub i16);
+#[derive(Clone)]                     pub struct MemValue(pub i16);
+#[derive(Clone)]                    pub struct MemOffset(pub i16);
+#[derive(Clone)]                  pub struct ProgCounter(pub i16);
+#[derive(Clone)]                   pub struct ImmediateN6(pub i8);
+#[derive(Clone)]                   pub struct ImmediateN8(pub i8);
+#[derive(Debug, Clone)]              pub struct RegLabel(pub u8);
 
 impl From<ProgCounter> for MemAddr {
     fn from(value: ProgCounter) -> Self {
         Self(norm_n(&format!("{:X}", value.0)).unwrap())
+    }
+}
+
+impl From<i16> for MemAddr {
+    fn from(value: i16) -> Self {
+        Self(value)
     }
 }
 
@@ -163,8 +197,8 @@ macro_rules! other_impls {
     }
 }
 
-try_from_str!(MemAddr, MemValue, MemOffset, ProgCounter, ImmediateN);
-other_impls!(MemAddr, MemValue, MemOffset, ProgCounter, ImmediateN);
+try_from_str!(MemAddr, MemValue, MemOffset, ProgCounter, ImmediateN6, ImmediateN8);
+other_impls!(MemAddr, MemValue, MemOffset, ProgCounter, ImmediateN6, ImmediateN8);
 
 impl fmt::Display for Processador {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -174,7 +208,7 @@ impl fmt::Display for Processador {
             out.push_str(&format!("R{i}: 0x{:0>4X} // ", reg.0));
         }
         out.push('\n');
-        out.push_str(&format!("- Memory: {:?}", self.memory));
+        out.push_str(&format!("- Memory: {:?}", self.memory.0));
         out.push_str("\n[-------END_STATUS-------]\n");
 
         write!(f, "{out}")
@@ -187,3 +221,20 @@ fn sign_extend(n: &MemValue) -> MemValue {
 
     MemValue(val)
 }
+
+fn se_6(n: &ImmediateN6) -> i16 {
+    let n = n.0 as i16;
+    let val = if n < (1 << 5) { n } else { n | unsafe { transmute::<u16, i16>(0xFFC0) } };
+    print!("[INFO]: Sign extended 0x{:0>4X} into 0x{:0>4X}", n, val);
+
+    val
+}
+
+fn se_8(n: &ImmediateN8) -> i16 {
+    let n = n.0 as i16;
+    let val = if n < (1 << 7) { n } else { n | unsafe { transmute::<u16, i16>(0xFF00) } };
+    print!("[INFO]: Sign extended 0x{:0>4X} into 0x{:0>4X}", n, val);
+
+    val
+}
+

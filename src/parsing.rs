@@ -41,10 +41,20 @@ macro_rules! generate_parse_match {
             },
             "ST" => Instruction::ST { // ST 20(R2), R0 <-> ST OFF(Rd), Ra
                 offset: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
-                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                b: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
             },
             "LD" => Instruction::LD { // LD R0, 20(R2) <-> ST Rd, OFF(Ra)
+                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                offset: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+                a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+            },
+            "STB" => Instruction::STB { // ST 20(R2), R0 <-> ST OFF(Rd), Ra
+                offset: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+                b: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+            },
+            "LDB" => Instruction::LDB { // LD R0, 20(R2) <-> ST Rd, OFF(Ra)
                 d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 offset: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,

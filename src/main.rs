@@ -38,8 +38,13 @@ fn main() {
         (MemAddr(18), "CMPLTU R0, R1, R2".try_into().unwrap()), // True
         (MemAddr(20), "MOVI R0, 0x12".try_into().unwrap()),
         (MemAddr(22), "MOVHI R0, 0x37".try_into().unwrap()),
-        (MemAddr(24), "ST 20(R1), R2".try_into().unwrap()),
-        (MemAddr(26), "LD R0, 20(R1)".try_into().unwrap()),
+        (MemAddr(24), "MOVI R1, 0x34".try_into().unwrap()),
+        (MemAddr(26), "MOVHI R1, 0x80".try_into().unwrap()),
+        (MemAddr(28), "MOVI R2, 0x12".try_into().unwrap()),
+        (MemAddr(30), "MOVHI R2, 0x00".try_into().unwrap()),
+        (MemAddr(32), "SHA R0, R1, R2".try_into().unwrap()),
+        (MemAddr(34), "STB 20(R1), R2".try_into().unwrap()),
+        (MemAddr(36), "LDB R0, 20(R1)".try_into().unwrap()),
     ]);
 
     let mut cpu = Processador::new(
