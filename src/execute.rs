@@ -42,7 +42,7 @@ impl Processador {
             Instruction::CMPLTU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) < transmute(self.regs[b].0)) as isize },
             Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) <= transmute(self.regs[b].0)) as isize },
 
-            Instruction::LD { a, d, offset }  => _ = self.regs[d].0 = self.memory.get(&MemAddr(self.regs[a].0 as usize)).expect("tried loading from non-existant memory").0,
+            Instruction::LD { a, d, offset }  => _ = self.regs[d].0 = self.memory.get(&MemAddr((offset.0 + self.regs[a].0) as usize)).expect("tried loading from non-existant memory").0,
             Instruction::ST { a, d, offset }  => _ = self.memory.insert(MemAddr((self.regs[d].0 + offset.0) as usize), MemValue(self.regs[a].0)),
             Instruction::LDB { a, d, offset } => todo!(),
             Instruction::STB { a, d, offset } => todo!(),

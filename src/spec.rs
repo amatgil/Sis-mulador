@@ -85,9 +85,9 @@ pub enum Instruction {
         offset: ImmediateN,
     },
     ST {
-        a: RegLabel,
         offset: ImmediateN,
         d: RegLabel,
+        a: RegLabel,
     },
     STB {
         a: RegLabel,

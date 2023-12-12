@@ -39,6 +39,11 @@ macro_rules! generate_parse_match {
                 d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 n: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
             },
+            "ST" => Instruction::ST { // ST 20(R2), R0 <-> ST OFF(Rd), Ra
+                offset: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+            },
             x => return Err(ParseError::UnrecognizedInstruction(x.into()))
         })
     }
@@ -77,6 +82,7 @@ impl TryFrom<&str> for Instruction {
     type Error = ParseError;
 
     fn try_from(value: &str) -> Result<Self, ParseError> {
+        let value = value.replace("(", " ");
         let mut parts = value.split(" ");
         let verb = parts.next().ok_or(ParseError::MissingVerb)?;
         println!("[INFO]: Verb parsed is: {verb}");
@@ -96,7 +102,6 @@ impl TryFrom<&str> for Instruction {
             });
         }
 
-
         generate_parse_match!(
             verb, parts, AND, OR, XOR, ADD, SUB, SHA, SHL, CMPLT, CMPLE, CMPEQ, CMPLTU, CMPLEU
         )
@@ -112,7 +117,8 @@ impl TryFrom<&str> for RegLabel {
     type Error = RegLabelError;
 
     fn try_from(input: &str) -> Result<Self, Self::Error> {
-        let char = input.bytes().nth(1).ok_or(RegLabelError::MissingNumber)?;
+        let mut char = input.bytes().nth(1).ok_or(RegLabelError::MissingNumber)?;
+        if char == b'(' {char = input.bytes().nth(2).ok_or(RegLabelError::MissingNumber)?;}
         let n = if char.is_ascii_alphanumeric() {
             char - '0' as u8
         } else {
