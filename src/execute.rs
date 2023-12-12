@@ -34,9 +34,10 @@ impl Processador {
             print_info("This instruction is SLOW (memory)"); 
             self.instrs_fetes.slow += 1;
         } else {
-            print_info("This instruction is FAST (memory)"); 
+            print_info("This instruction is FAST (not-memory)"); 
             self.instrs_fetes.fast += 1;
         }
+
         match inst {
             Instruction::AND { a, b, d }      => self.regs[d].0 = self.regs[a].0 & self.regs[b].0,
             Instruction::OR { a, b, d }       => self.regs[d].0 = self.regs[a].0 | self.regs[b].0,
@@ -65,8 +66,8 @@ impl Processador {
             Instruction::ST  { a, b, offset } => self.memory.insert_word(&(self.regs[b].0 + se_6(offset.0)).into(), self.regs[a].0),
             Instruction::STB { a, b, offset } => self.memory.insert_byte(&(self.regs[b].0 + se_6(offset.0)).into(), (self.regs[a].0 & 0xF) as i8),
 
-            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 += se_8(offset.0) as u16 }
-            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 += se_8(offset.0) as u16 }
+            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 = (self.pc.0 as i16 + se_8(offset.0)) as u16 }
+            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 = (self.pc.0 as i16 + se_8(offset.0)) as u16 }
 
             Instruction::MOVI { d, n }        => self.regs[d].0 = se_8(n.0),
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= (n.0 as i16) << 8,
@@ -92,9 +93,7 @@ impl Processador {
         };
         self.execute_raw(&inst);
         self.pc.advance();
-        if print_status {
-            println!("{self}");
-        }
+        if print_status { println!("{self}"); }
     }
     pub fn update_io(&mut self, new_io: HashMap<MemAddr, Value16Bit>) { self.io = new_io; }
 }
