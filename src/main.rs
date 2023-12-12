@@ -1,6 +1,7 @@
-use std::collections::HashMap;
 
-use SISA_sim::{MemAddr, MemValue, Reg, Processador};
+use std::{collections::HashMap, default};
+
+use SISA_sim::{MemAddr, MemValue, Reg, Processador, Registers};
 pub use SISA_sim::{ProgCounter, Instruction};
 
 
@@ -24,19 +25,22 @@ fn main() {
     ]);
 
     let init_pc: ProgCounter = ProgCounter(0);
-    const EMPTY_REG: Reg = Reg(0);
 
-    let init_regs: [Reg; 8] = [EMPTY_REG; 8];
     let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
-        (MemAddr(0), "MOVI R2, 0x24".try_into().unwrap()),
-        (MemAddr(2), "MOVI R3, 0x94".try_into().unwrap()),
+        //(MemAddr(0), "MOVI R2, 0x24".try_into().unwrap()),
+        (MemAddr(0), "AND R0, R1, R3".try_into().unwrap()),
+        (MemAddr(2), "OR R0, R1, R3".try_into().unwrap()),
+        (MemAddr(4), "XOR R0, R1, R3".try_into().unwrap()),
+        (MemAddr(6), "MOVI R0, 0x94".try_into().unwrap()),
+        (MemAddr(8), "CMPEQ R0, R1, R2".try_into().unwrap()),
+        (MemAddr(10), "CMPEQ R0, R1, R1".try_into().unwrap()),
     ]);
 
-    let mut cpu = Processador::new(init_regs, memory, init_pc, instructions);
+    let mut cpu = Processador::new(
+        Registers([Reg(0), Reg(20), Reg(53), Reg(21343), Reg(523542), Reg(414), Reg(0), Reg(0)]),
+        memory, init_pc, instructions);
     println!("{cpu}");
-    cpu.execute_next(true);
-    cpu.execute_next(true);
-    println!("{cpu}");
+    loop { cpu.execute_next(true); }
 }
 
 const INPUT: &str =

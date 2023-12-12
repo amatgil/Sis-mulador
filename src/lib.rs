@@ -1,11 +1,13 @@
 pub mod execute;
 pub mod parsing;
 pub mod spec;
+pub mod calc;
 
 pub use std::num::ParseIntError;
 pub use spec::*;
 pub use parsing::*;
 pub use execute::*;
+pub use calc::*;
 
 pub fn norm_n(input: &str) -> Result<usize, ParseIntError> {
     if input.len() <= 2 || &input[..2] != "0x" { input.parse() } // Is dec here

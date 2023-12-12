@@ -8,9 +8,9 @@ macro_rules! generate_parse_match {
             // Binary ones (AL, CMP)
             $(
                 stringify!($name) => Instruction::$name {
+                    d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                     a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                     b: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
-                    d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 },
             )*
             // Has no destination, is special
@@ -19,9 +19,9 @@ macro_rules! generate_parse_match {
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()? 
             },
             "ADDI" => Instruction::ADDI {
+                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 b: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
-                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
             },
             "BZ" => Instruction::BZ {
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,

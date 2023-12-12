@@ -1,16 +1,38 @@
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, ops::{Index, IndexMut}};
 
 use crate::{Instruction, norm_n, ParseError};
 
 
+pub struct Registers (pub [Reg; 8]);
+
+impl Default for Registers {
+    fn default() -> Self {
+        const EMPTY_REG: Reg = Reg(0);
+        Self([EMPTY_REG; 8])
+    }
+}
+
+impl Index<&RegLabel> for Registers {
+    type Output = Reg;
+    fn index(&self, index: &RegLabel) -> &Self::Output {
+        &self.0[index.0 as usize]
+    }
+}
+
+impl IndexMut<&RegLabel> for Registers {
+    fn index_mut(&mut self, index: &RegLabel) -> &mut Self::Output {
+        &mut self.0[index.0 as usize]
+    }
+}
+
 pub struct Processador {
-    regs: [Reg; 8],
+    regs: Registers,
     memory: HashMap<MemAddr, MemValue>,
     inst_memory: HashMap<MemAddr, Instruction>,
     pc: ProgCounter,
 }
 
-#[derive(Clone)] pub struct Reg(pub usize);
+#[derive(Clone, Copy)] pub struct Reg(pub usize);
 #[derive(Hash, PartialEq, Eq, Clone)] pub struct MemAddr(pub usize);
 #[derive(Clone)] pub struct MemValue(pub usize);
 #[derive(Clone)] pub struct MemOffset(pub usize);
@@ -54,7 +76,7 @@ impl fmt::Display for Processador {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut out = String::from("\n[STATUS]: \n");
         out.push_str(&format!("- Regs: "));
-        for (i, reg) in self.regs.iter().enumerate() { out.push_str(&format!("R{i}: 0x{:0>4X} // ", reg.0)); }
+        for (i, reg) in self.regs.0.iter().enumerate() { out.push_str(&format!("R{i}: 0x{:0>4X} // ", reg.0)); }
         out.push('\n');
         out.push_str(&format!("- Memory: {:?}", self.memory));
         out.push_str("\n[END_STATUS]\n");
@@ -63,40 +85,37 @@ impl fmt::Display for Processador {
     }
 }
 impl Processador {
-    pub fn new(init_regs: [Reg; 8], init_mem: HashMap<MemAddr, MemValue>, init_pc: ProgCounter, instructions: HashMap<MemAddr, Instruction>) -> Self {
+    pub fn new(init_regs: Registers, init_mem: HashMap<MemAddr, MemValue>, init_pc: ProgCounter, instructions: HashMap<MemAddr, Instruction>) -> Self {
         Self { regs: init_regs, memory: init_mem, pc: init_pc, inst_memory: instructions }
     }
     pub fn execute_raw(&mut self, inst: &Instruction) {
         println!("[INFO]: Running {inst:?}");
         match inst {
-            Instruction::AND { a, b, d } => todo!(),
-            Instruction::OR { a, b, d } => todo!(),
-            Instruction::XOR { a, b, d } => todo!(),
-            Instruction::NOT { a, d } => todo!(),
-            Instruction::ADD { a, b, d } => todo!(),
-            Instruction::SUB { a, b, d } => todo!(),
-            Instruction::SHA { a, b, d } => todo!(),
-            Instruction::SHL { a, b, d } => todo!(),
-            Instruction::CMPLT { a, b, d } => todo!(),
-            Instruction::CMPLE { a, b, d } => todo!(),
-            Instruction::CMPEQ { a, b, d } => todo!(),
-            Instruction::CMPLTU { a, b, d } => todo!(),
-            Instruction::CMPLEU { a, b, d } => todo!(),
-            Instruction::ADDI { a, b, d } => todo!(),
-            Instruction::LD { a, b, d } => todo!(),
-            Instruction::ST { a, b, d } => todo!(),
-            Instruction::LDB { a, b, d } => todo!(),
+            Instruction::AND { a, b, d }    => { self.regs[d].0 = self.regs[a].0 & self.regs[b].0; }
+            Instruction::OR { a, b, d }     => { self.regs[d].0 = self.regs[a].0 | self.regs[b].0; }
+            Instruction::XOR { a, b, d }    => { self.regs[d].0 = self.regs[a].0 ^ self.regs[b].0; }
+            Instruction::NOT { a, d }       => { self.regs[d].0 = !self.regs[a].0 }
+            Instruction::ADD { a, b, d }    => { self.regs[d] = self.regs[a] + self.regs[b] }
+            Instruction::ADDI { a, b, d }   => { self.regs[d].0 = self.regs[a].0 + b.0 }
+            Instruction::SUB { a, b, d }    => { self.regs[d] = self.regs[a] - self.regs[b] }
+            Instruction::SHA { a, b, d }    => todo!(),
+            Instruction::SHL { a, b, d }    => { self.regs[d] =  self.regs[a] << self.regs[b]} // Implemented to do it properly lmao
+            Instruction::CMPEQ { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as usize },
+            Instruction::CMPLT { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as usize }
+            Instruction::CMPLE { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as usize },
+            Instruction::CMPLTU { a, b, d } => { todo!() },
+            Instruction::CMPLEU { a, b, d } => { todo!() },
+            Instruction::LD { a, b, d }     => todo!(),
+            Instruction::ST { a, b, d }     => todo!(),
+            Instruction::LDB { a, b, d }    => todo!(),
             Instruction::STB { d, x, addr } => todo!(),
-            Instruction::BZ { a, offset } => todo!(),
-            Instruction::BNZ { a, offset } => todo!(),
-            Instruction::MOVI { d, n } => {
-                let n = sign_extend(n);
-                self.regs[d.0 as usize].0 = n.0;
-            }
-            Instruction::MOVHI { d, n } => todo!(),
-            Instruction::IN { d, n } => todo!(),
-            Instruction::OUT { d, n } => todo!(),
-            Instruction::NOP => todo!(),
+            Instruction::BZ { a, offset }   => todo!(),
+            Instruction::BNZ { a, offset }  => todo!(),
+            Instruction::MOVI { d, n }      => { self.regs[d].0 = sign_extend(n).0 },
+            Instruction::MOVHI { d, n }     => todo!(),
+            Instruction::IN { d, n }        => todo!(),
+            Instruction::OUT { d, n }       => {todo!()},
+            Instruction::NOP                => {},
         }
         println!();
     }
