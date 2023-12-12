@@ -39,18 +39,18 @@ fn main() {
         (MemAddr(20), "MOVI R0, 0x12".try_into().unwrap()),
         (MemAddr(22), "MOVHI R0, 0x37".try_into().unwrap()),
         (MemAddr(24), "ST 20(R1), R2".try_into().unwrap()),
-        //(MemAddr(26), "LD R0, 0(R1)".try_into().unwrap()),
+        (MemAddr(26), "LD R0, 20(R1)".try_into().unwrap()),
     ]);
 
     let mut cpu = Processador::new(
         Registers([
             Reg(0),
             Reg(2),
-            Reg(unsafe{ transmute(-2_isize) }),
+            Reg(unsafe{ transmute(-2_i16) }),
             Reg(3),
-            Reg(unsafe{ transmute(-3_isize) }),
+            Reg(unsafe{ transmute(-3_i16) }),
             Reg(4),
-            Reg(unsafe{ transmute(-5_isize) }),
+            Reg(unsafe{ transmute(-5_i16) }),
             Reg(0),
         ]),
         memory,

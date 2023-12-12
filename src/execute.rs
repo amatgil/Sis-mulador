@@ -36,19 +36,19 @@ impl Processador {
             Instruction::SHA { a, b, d }      => todo!(),
             Instruction::SHL { a, b, d }      => self.regs[d] = self.regs[a] << self.regs[b], // Implemented to do it using the last 5 bits
 
-            Instruction::CMPEQ { a, b, d }    => self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as isize,
-            Instruction::CMPLT  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as isize,
-            Instruction::CMPLE  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as isize,
-            Instruction::CMPLTU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) < transmute(self.regs[b].0)) as isize },
-            Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<isize, usize>(self.regs[a].0) <= transmute(self.regs[b].0)) as isize },
+            Instruction::CMPEQ { a, b, d }    => self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as i16,
+            Instruction::CMPLT  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as i16,
+            Instruction::CMPLE  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as i16,
+            Instruction::CMPLTU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) < transmute(self.regs[b].0)) as i16 },
+            Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) <= transmute(self.regs[b].0)) as i16 },
 
-            Instruction::LD { a, d, offset }  => _ = self.regs[d].0 = self.memory.get(&MemAddr((offset.0 + self.regs[a].0) as usize)).expect("tried loading from non-existant memory").0,
-            Instruction::ST { a, d, offset }  => _ = self.memory.insert(MemAddr((self.regs[d].0 + offset.0) as usize), MemValue(self.regs[a].0)),
+            Instruction::LD { a, d, offset }  => _ = self.regs[d].0 = self.memory.get(&MemAddr(offset.0 + self.regs[a].0)).expect("tried loading from non-existant memory").0,
+            Instruction::ST { a, d, offset }  => _ = self.memory.insert(MemAddr(self.regs[d].0 + offset.0), MemValue(self.regs[a].0)),
             Instruction::LDB { a, d, offset } => todo!(),
             Instruction::STB { a, d, offset } => todo!(),
 
-            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 = (self.pc.0 as isize + offset.0) as usize}
-            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 = (self.pc.0 as isize + offset.0) as usize}
+            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 += offset.0 }
+            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 += offset.0 }
 
             Instruction::MOVI { d, n }        => self.regs[d].0 = sign_extend(n).0,
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= n.0 << 8,
@@ -60,6 +60,7 @@ impl Processador {
         }
         println!();
     }
+
     pub fn execute_next(&mut self, print_status: bool) {
         println!("[INFO]: Executing instruction at PC = {}", self.pc);
         let inst = self.instr_memory[&MemAddr(self.pc.0)].clone();
@@ -103,19 +104,19 @@ pub struct Processador {
 }
 
 #[derive(Clone, Copy)]
-pub struct Reg(pub isize);
+pub struct Reg(pub i16);
 #[derive(Hash, PartialEq, Eq, Clone)]
-pub struct MemAddr(pub usize);
+pub struct MemAddr(pub i16);
 #[derive(Clone)]
-pub struct MemValue(pub isize);
+pub struct MemValue(pub i16);
 #[derive(Clone)]
-pub struct MemOffset(pub isize);
+pub struct MemOffset(pub i16);
 #[derive(Clone)]
-pub struct ProgCounter(pub usize);
+pub struct ProgCounter(pub i16);
 #[derive(Debug, Clone)]
 pub struct RegLabel(pub u8);
 #[derive(Clone)]
-pub struct ImmediateN(pub isize);
+pub struct ImmediateN(pub i16);
 
 impl From<ProgCounter> for MemAddr {
     fn from(value: ProgCounter) -> Self {
@@ -170,8 +171,14 @@ impl fmt::Display for Processador {
 }
 
 fn sign_extend(n: &MemValue) -> MemValue {
-    let val = if n.0 < (1 << 7) { n.0 } else { n.0 | 0xFF00 };
+    let val = if n.0 < (1 << 7) { n.0 } else { n.0 | unsafe { transmute::<u16, i16>(0xFF00) } };
     print!("[INFO]: Sign extended 0x{:0>4X} into 0x{:0>4X}", n.0, val);
 
     MemValue(val)
+}
+fn sign_extend_8(n: &i8) -> isize {
+    let val = *n as isize;
+    print!("[INFO]: Sign extended 0x{:0>4X} into 0x{:0>4X}", n, val);
+
+    val
 }

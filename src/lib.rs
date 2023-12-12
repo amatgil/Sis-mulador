@@ -9,12 +9,12 @@ pub use parsing::*;
 pub use spec::*;
 pub use std::num::ParseIntError;
 
-pub fn norm_n(input: &str) -> Result<usize, ParseIntError> {
+pub fn norm_n(input: &str) -> Result<i16, ParseIntError> {
     if input.len() <= 2 || &input[..2] != "0x" {
         input.parse()
     } else {
         // Is dec here
-        usize::from_str_radix(&input[2..], 16)
+        i16::from_str_radix(&input[2..], 16)
     }
 }
 
