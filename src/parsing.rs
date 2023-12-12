@@ -44,6 +44,11 @@ macro_rules! generate_parse_match {
                 d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
             },
+            "LD" => Instruction::LD { // LD R0, 20(R2) <-> ST Rd, OFF(Ra)
+                d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                offset: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+                a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+            },
             x => return Err(ParseError::UnrecognizedInstruction(x.into()))
         })
     }
