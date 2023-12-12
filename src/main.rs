@@ -24,6 +24,7 @@ fn main() {
         */
     ]);
 
+    let io_system: HashMap<MemAddr, MemValue> = HashMap::new();
     let init_pc: ProgCounter = ProgCounter(0);
 
     let instructions: HashMap<MemAddr, Instruction> = HashMap::from([
@@ -39,7 +40,7 @@ fn main() {
 
     let mut cpu = Processador::new(
         Registers([Reg(0), Reg(20), Reg(45), Reg(21343), Reg(523542), Reg(414), Reg(0), Reg(0)]),
-        memory, init_pc, instructions);
+        memory, init_pc, instructions, io_system);
     println!("{cpu}");
     loop { cpu.execute_next(true); }
 }

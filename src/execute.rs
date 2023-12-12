@@ -2,6 +2,49 @@ use std::{collections::HashMap, fmt, ops::{Index, IndexMut}};
 
 use crate::{Instruction, norm_n, ParseError};
 
+impl Processador {
+    pub fn new(init_regs: Registers, init_mem: HashMap<MemAddr, MemValue>, init_pc: ProgCounter, instructions: HashMap<MemAddr, Instruction>, init_io: HashMap<MemAddr, MemValue>) -> Self {
+        Self { regs: init_regs, memory: init_mem, pc: init_pc, instr_memory: instructions, io: init_io }
+    }
+    pub fn execute_raw(&mut self, inst: &Instruction) {
+        println!("[INFO]: Running {inst:?}");
+        match inst {
+            Instruction::AND { a, b, d }    => { self.regs[d].0 = self.regs[a].0 & self.regs[b].0; }
+            Instruction::OR { a, b, d }     => { self.regs[d].0 = self.regs[a].0 | self.regs[b].0; }
+            Instruction::XOR { a, b, d }    => { self.regs[d].0 = self.regs[a].0 ^ self.regs[b].0; }
+            Instruction::NOT { a, d }       => { self.regs[d].0 = !self.regs[a].0 }
+            Instruction::ADD { a, b, d }    => { self.regs[d] = self.regs[a] + self.regs[b] }
+            Instruction::ADDI { a, b, d }   => { self.regs[d].0 = self.regs[a].0 + b.0 }
+            Instruction::SUB { a, b, d }    => { self.regs[d] = self.regs[a] - self.regs[b] }
+            Instruction::SHA { a, b, d }    => todo!(),
+            Instruction::SHL { a, b, d }    => { self.regs[d] =  self.regs[a] << self.regs[b]} // Implemented to do it using the last 5 bits
+            Instruction::CMPEQ { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as usize },
+            Instruction::CMPLT { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as usize }
+            Instruction::CMPLE { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as usize },
+            Instruction::CMPLTU { a, b, d } => { todo!() },
+            Instruction::CMPLEU { a, b, d } => { todo!() },
+            Instruction::LD { a, b, d }     => todo!(),
+            Instruction::ST { a, b, d }     => todo!(),
+            Instruction::LDB { a, b, d }    => todo!(),
+            Instruction::STB { d, x, addr } => todo!(),
+            Instruction::BZ { a, offset }   => todo!(),
+            Instruction::BNZ { a, offset }  => todo!(),
+            Instruction::MOVI { d, n }      => { self.regs[d].0 = sign_extend(n).0 },
+            Instruction::MOVHI { d, n }     => todo!(),
+            Instruction::IN { d, n }        => todo!(),
+            Instruction::OUT { d, n }       => todo!(),
+            Instruction::NOP                => {},
+        }
+        println!();
+    }
+    pub fn execute_next(&mut self, print_status: bool) {
+        println!("[INFO]: Executing instruction at PC = {}", self.pc);
+        let inst = self.instr_memory[&MemAddr(self.pc.0)].clone();
+        self.execute_raw(&inst);
+        self.pc.advance();
+        if print_status {println!("{self}");}
+    }
+}
 
 pub struct Registers (pub [Reg; 8]);
 
@@ -28,7 +71,8 @@ impl IndexMut<&RegLabel> for Registers {
 pub struct Processador {
     regs: Registers,
     memory: HashMap<MemAddr, MemValue>,
-    inst_memory: HashMap<MemAddr, Instruction>,
+    io: HashMap<MemAddr, MemValue>,
+    instr_memory: HashMap<MemAddr, Instruction>,
     pc: ProgCounter,
 }
 
@@ -82,49 +126,6 @@ impl fmt::Display for Processador {
         out.push_str("\n[END_STATUS]\n");
 
         write!(f, "{out}")
-    }
-}
-impl Processador {
-    pub fn new(init_regs: Registers, init_mem: HashMap<MemAddr, MemValue>, init_pc: ProgCounter, instructions: HashMap<MemAddr, Instruction>) -> Self {
-        Self { regs: init_regs, memory: init_mem, pc: init_pc, inst_memory: instructions }
-    }
-    pub fn execute_raw(&mut self, inst: &Instruction) {
-        println!("[INFO]: Running {inst:?}");
-        match inst {
-            Instruction::AND { a, b, d }    => { self.regs[d].0 = self.regs[a].0 & self.regs[b].0; }
-            Instruction::OR { a, b, d }     => { self.regs[d].0 = self.regs[a].0 | self.regs[b].0; }
-            Instruction::XOR { a, b, d }    => { self.regs[d].0 = self.regs[a].0 ^ self.regs[b].0; }
-            Instruction::NOT { a, d }       => { self.regs[d].0 = !self.regs[a].0 }
-            Instruction::ADD { a, b, d }    => { self.regs[d] = self.regs[a] + self.regs[b] }
-            Instruction::ADDI { a, b, d }   => { self.regs[d].0 = self.regs[a].0 + b.0 }
-            Instruction::SUB { a, b, d }    => { self.regs[d] = self.regs[a] - self.regs[b] }
-            Instruction::SHA { a, b, d }    => todo!(),
-            Instruction::SHL { a, b, d }    => { self.regs[d] =  self.regs[a] << self.regs[b]} // Implemented to do it properly lmao
-            Instruction::CMPEQ { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as usize },
-            Instruction::CMPLT { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as usize }
-            Instruction::CMPLE { a, b, d }  => { self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as usize },
-            Instruction::CMPLTU { a, b, d } => { todo!() },
-            Instruction::CMPLEU { a, b, d } => { todo!() },
-            Instruction::LD { a, b, d }     => todo!(),
-            Instruction::ST { a, b, d }     => todo!(),
-            Instruction::LDB { a, b, d }    => todo!(),
-            Instruction::STB { d, x, addr } => todo!(),
-            Instruction::BZ { a, offset }   => todo!(),
-            Instruction::BNZ { a, offset }  => todo!(),
-            Instruction::MOVI { d, n }      => { self.regs[d].0 = sign_extend(n).0 },
-            Instruction::MOVHI { d, n }     => todo!(),
-            Instruction::IN { d, n }        => todo!(),
-            Instruction::OUT { d, n }       => {todo!()},
-            Instruction::NOP                => {},
-        }
-        println!();
-    }
-    pub fn execute_next(&mut self, print_status: bool) {
-        println!("[INFO]: Executing instruction at PC = {}", self.pc);
-        let inst = self.inst_memory[&MemAddr(self.pc.0)].clone();
-        self.execute_raw(&inst);
-        self.pc.advance();
-        if print_status {println!("{self}");}
     }
 }
 
