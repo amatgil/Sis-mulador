@@ -3,7 +3,23 @@ use std::{collections::HashMap, default, mem::transmute};
 pub use SISA_sim::{Instruction, ProgCounter};
 use SISA_sim::{MemAddr, MemValue, Processador, Reg, Registers, Value16Bit, Memory, norm_n};
 
-const MY_INPUT: &str = 
+
+fn main() {
+    // Expected outputs: 236000, 192000, 268800
+    let pre_memory: HashMap<&str, &str> = HashMap::from([
+        ("0x0022", "0x0000"),
+        ("0x0024", "0x0002"),
+        ("0x0026", "0xFFFB"),
+        ("0x0028", "0x0108"),
+        ("0x002A", "0xFF9D"),
+        ("0x002C", "0x0017"),
+        ("0x002E", "0x003A"),
+        ("0x0030", "0xFF9C"),
+        ("0x0032", "0x0020"),
+        ("0x0034", "0x0000"),
+        ("0x0036", "0xFFF9"),
+    ]);
+        let my_input: &str =
 "IN R0, 0
 BZ R0, -2
 IN R0, 1
@@ -22,25 +38,6 @@ ADDI R2, R2, 2
 ADDI R1, R1, -1
 BNZ R1, -8";
 
-const ELOI_INPUT: &str =
-"
-";
-
-fn main() {
-    let pre_memory: HashMap<&str, &str> = HashMap::from([
-        ("0x0022", "0x0000"),
-        ("0x0024", "0x0002"),
-        ("0x0026", "0xFFFB"),
-        ("0x0028", "0x0108"),
-        ("0x002A", "0xFF9D"),
-        ("0x002C", "0x0017"),
-        ("0x002E", "0x003A"),
-        ("0x0030", "0xFF9C"),
-        ("0x0032", "0x0020"),
-        ("0x0034", "0x0000"),
-        ("0x0036", "0xFFF9"),
-    ]);
-
     let mut memory = Memory::new();
     pre_memory.iter().for_each(|(m, v)| {
         println!("Pushing {m}, {v}");
@@ -58,7 +55,7 @@ fn main() {
     let init_pc: ProgCounter = ProgCounter(0);
 
     let instructions: HashMap<MemAddr, Instruction> = 
-        MY_INPUT.lines().enumerate()
+        my_input.lines().enumerate()
         .map(|(i, line)| {
             println!("{i} -- {line}");
             (MemAddr((i * 2) as i16), line.try_into().unwrap())
@@ -66,16 +63,7 @@ fn main() {
     dbg!(&instructions);
 
     let mut cpu = Processador::new(
-        Registers([
-            Reg(0),
-            Reg(2),
-            Reg(unsafe{ transmute(-2_i16) }),
-            Reg(3),
-            Reg(unsafe{ transmute(-3_i16) }),
-            Reg(4),
-            Reg(unsafe{ transmute(-5_i16) }),
-            Reg(0),
-        ]),
+        Registers::default(),
         memory,
         init_pc,
         instructions,
