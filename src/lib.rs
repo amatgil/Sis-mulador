@@ -4,6 +4,7 @@ pub mod execute;
 pub mod parsing;
 pub mod spec;
 pub mod input;
+pub mod cli;
 
 pub use calc::*;
 pub use execute::*;
