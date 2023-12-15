@@ -1,15 +1,18 @@
-use std::{
+use::std::{
     collections::HashMap,
     fmt,
-    ops::{Index, IndexMut}, mem::transmute, process::{ExitCode, Termination},
+    ops::{Index, IndexMut}, mem::transmute,
 };
 
-use crate::{Instruction, print_info, ParseError, norm_n};
+use crate::{print_info, norm_n};
+use crate::parsing::ParseError;
+use crate::spec::Instruction;
 
 const DEFAULT_MEMORY_WORD: i16 = 0x0000;
 const INSTRUCTS_SLOW: [&str; 4] = ["LD", "LDB", "ST", "STB"];
 
 impl Processador {
+    /// Create a new Processador given a starting state
     pub fn new(
         init_regs: Registers,
         init_mem: Memory,
@@ -22,11 +25,12 @@ impl Processador {
             memory:init_mem,
             pc: init_pc,
             instr_memory: instructions,
-            io: init_io,
+            io: IOSystem(init_io),
             instrs_fetes: NumInstruccions::default(),
         }
     }
     #[rustfmt::skip]
+    /// Execute any valid instruction directly, without going through the Program Counter
     pub fn execute_raw(&mut self, inst: &Instruction) {
         println!("[INFO]: Running \x1b[1;4;32m{:?}\x1b[0m", inst);
 
@@ -52,6 +56,7 @@ impl Processador {
             Instruction::CMPEQ { a, b, d }    => self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as i16,
             Instruction::CMPLT  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as i16,
             Instruction::CMPLE  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as i16,
+            // TODO: Remove unnecssary use of transmute (use `as`)
             Instruction::CMPLTU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) < transmute(self.regs[b].0)) as i16 },
             Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) <= transmute(self.regs[b].0)) as i16 },
 
@@ -72,7 +77,7 @@ impl Processador {
             Instruction::MOVI { d, n }        => self.regs[d].0 = se_8(n.0),
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= (n.0 as i16) << 8,
 
-            Instruction::IN { d, n }          => self.regs[d].0 = self.io[n].0,
+            Instruction::IN { d, n }          => self.regs[d].0 = self.io.get(n).expect("Tried to access non existant IO address").0,
             Instruction::OUT { d, n }         => println!("[OUTPUT]: value '0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[d].0, n),
 
             Instruction::NOP                  => {},
@@ -80,6 +85,8 @@ impl Processador {
         println!();
     }
 
+    /// Execute the next instruction, which is the one that the Program  Counter is currently
+    /// pointing to. If there is no instruction at that address, the program gracefully exits.
     pub fn execute_next(&mut self, print_status: bool) {
         print_info(&format!("Executing instruction at PC = {}", self.pc));
         let inst = self.instr_memory.get(&(self.pc.0 as i16).into());
@@ -96,20 +103,30 @@ impl Processador {
         self.pc.advance();
         if print_status { println!("{self}"); }
     }
-    pub fn update_io(&mut self, new_io: HashMap<MemAddr, Value16Bit>) { self.io = new_io; }
+    /// Update the IO's ports. Pretty much unusable as it must be hard-coded in
+    pub fn update_io(&mut self, new_io: HashMap<MemAddr, Value16Bit>) { self.io = IOSystem(new_io); }
 }
 
-pub struct Registers(pub [Reg; 8]);
-#[derive(Debug, Clone)] pub struct Memory(HashMap<MemAddr, MemValue>);
+/// The sequence of eight registers that are contained in the [Processador]'s REGFILE.
+pub struct Registers([Reg; 8]);
+
+/// The held memory that is contained in the [Processador]'s MEMORY module, stored as bytes (not
+/// words). 
+#[derive(Debug, Clone)] 
+pub struct Memory(HashMap<MemAddr, MemValue>);
 
 impl Memory {
+    /// Create a new empty memory
     pub fn new() -> Self {
         Self(HashMap::new())
     }
-    // Little Endian: even slot has LSB and even slot + 1 has MSB
+    /// Insert a byte at the given address
     pub fn insert_byte(&mut self, addr: &MemAddr, val: i8) {
         let _ = self.0.insert(addr.clone(), MemValue(val));
     }
+    /// Insert a word at the given address in Little Endian: the even slot has the LSB and
+    /// the even slot + 1 has MSB. Also note the alignment: if the address is odd, it will become
+    /// even by truncation (`addr && !-1`)
     pub fn insert_word(&mut self, addr: &MemAddr, val: i16) {
         let high = ((val & 0xFF00u16 as i16) >> 7) as i8;
         let low = (val & 0x00FF) as i8;
@@ -118,9 +135,12 @@ impl Memory {
         self.0.insert(addr.clone(), MemValue(low));
         self.0.insert(MemAddr(addr.0 + 1), MemValue(high));
     }
+    /// Get stored byte from the given memory address
     pub fn get_byte(&self, addr: &MemAddr) -> Option<i8> {
         self.0.get(addr).and_then(|m| Some(m.0))
     }
+    /// Get stored word from the given memory address. See the note about alignment at
+    /// [insert_word](Memory::insert_word)
     pub fn get_word(&self, addr: &MemAddr) -> Option<i16> {
         let addr = addr.align();
 
@@ -162,10 +182,29 @@ impl IndexMut<&RegLabel> for Registers {
     }
 }
 
+/// The currently held values from the INPUT system. The output system is a rudimentary printing
+/// out of the value and the intended address
+pub struct IOSystem(HashMap<MemAddr, Value16Bit>);
+
+impl IOSystem {
+    fn get(&self, index: &MemAddr) -> Option<&Value16Bit> {
+        self.0.get(index)
+    }
+    fn _get_mut(&mut self, index: &MemAddr) -> Option<&mut Value16Bit> {
+        self.0.get_mut(index)
+    }
+}
+
+/// The main Processor type. This contains the entire state of the simulator at any given time 
+/// and implements all the functionality that is given.
+///
+/// Note that the instruction memory only holds its values at the even addresses and that the
+/// [PC](ProgCounter)
+/// increments by 2 on each one.
 pub struct Processador {
     regs: Registers,
     memory: Memory,
-    io: HashMap<MemAddr, Value16Bit>,
+    io: IOSystem,
     instr_memory: HashMap<MemAddr, Instruction>,
     pc: ProgCounter,
     instrs_fetes: NumInstruccions,
@@ -182,6 +221,8 @@ struct NumInstruccions {
 #[derive(Hash, PartialEq, Eq, Clone)] pub struct MemAddr(pub i16);
 #[derive(Clone)]                     pub struct MemValue(pub i8);
 #[derive(Clone)]                    pub struct MemOffset(pub i16);
+/// The program counter, which hold the address of the next instruction to execute. It is
+/// incremented by 2 on every instruction, and may be altered by special branching instructions.
 #[derive(Clone)]                  pub struct ProgCounter(pub u16);
 #[derive(Clone)]                   pub struct ImmediateN6(pub i8);
 #[derive(Clone)]                   pub struct ImmediateN8(pub i8);
@@ -201,6 +242,8 @@ impl From<i16> for MemAddr {
 }
 
 impl ProgCounter {
+    /// Advance the address incrementing by 2. The increment is by 2 because instructions are a word
+    /// long, and so are stored at the even addresses only
     pub fn advance(&mut self) {
         self.0 += 2;
     }
@@ -273,14 +316,6 @@ impl fmt::Display for Processador {
     }
 }
 
-
-pub fn se_4(n: i16) -> i16 {
-    let n = n as i16;
-    let val = if n < (1 << 3) { n } else { n | unsafe { transmute::<u16, i16>(0xFFF0) } };
-    print_info(&format!("Sign extended 0x{:0>4X} into 0x{:0>4X}", n, val));
-
-    val
-}
 
 fn se_6(n: i8) -> i16 {
     let n = n as i16;

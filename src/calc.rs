@@ -1,6 +1,6 @@
 use std::ops::{Add, Shl, Sub};
 
-use crate::Reg;
+use crate::execute::Reg;
 
 impl Add for Reg {
     type Output = Self;

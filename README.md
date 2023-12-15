@@ -1,14 +1,50 @@
 # Simulador SISA
 
-The types are self explanatory, just mess around with `main` ig.
+The code is incredibly self documenting (on purpose). Usage is below.
 
-The code is incredibly self documenting (on purpose).
+(the ergonomics aren't the best, but it works Well Enough)
 
-I also use `transmute` a lot to interpret the bits into the way I want. Such is the way
-of low level code.
+## Example usage
+To solve the alien that I had for 13c (which gave instuctions and initial memory, with an initial
+PC of 0 and no initial register state), use:
+```rs
+cargo run -- examples/alien/alien.sisa -m examples/alien/alien.smem -i examples/alien/alien.sio
+```
+
+For the `mul16` algorithm:
+```rs
+cargo run -- examples/mul16/mul16.sisa -r examples/mul16/mul16.sregs
+```
+
+Or for the `mulfast` algorithm:
+```rs
+cargo run -- examples/mulfast/mulfast.sisa -r examples/mulfast/mulfast.sregs
+```
+
+Both multiplication algorithms will multiply 5 times 10, giving `0x32` on `R5`.
+
 
 ## IO
-Use `[cpu].update_io(new_io)` to change the IO status in between `execute`s.
+Use `[cpu].update_io(new_io)` to change the IO status in between `execute`s. This cannot be done
+from the cli, at the moment, because I have no idea how (and it doesn't seem that useful, to be 
+honest).
+
+## Registers
+File must contain eight lines (or less, for a computer with less registers), each with a decimal number. E.g.
+```txt
+0
+0
+0
+0
+0
+0
+5
+10
+```
+
+Register `6` will hold `0x5` and Register `7` will hold `0xA`.
+
+You cannot use more than eight registers, it will panic (this is intended behavior).
 
 ## NOTE
 It assumes the input is wellformed. Do not feed it instuctions like
@@ -18,8 +54,8 @@ It assumes the input is wellformed. Do not feed it instuctions like
 because it's invalid. If you feed it invalid input, you're gonna get UB (good luck lmao).
 
 Also, the memory and data memories are separate because I didn't stop to think before I started 
-writing down code. Just, like, assume they're the same. I'm protecting you from yourself?
-
+writing down code. Just, like, assume they're the same. I'm protecting you from yourself (this actually
+has already helped me).
 
 ## Roadmap
-Use `as` more (note the sign extension notes when upcasting): https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+Use `as` more (note the sign extension remarks when upcasting): https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions

@@ -1,6 +1,6 @@
 use std::num::{ParseIntError, TryFromIntError};
 
-use crate::*;
+use crate::{spec::Instruction, execute::RegLabel};
 
 macro_rules! generate_parse_match {
     ($verb:ident, $parts:ident, $($name:ident),*$(,)?) => {

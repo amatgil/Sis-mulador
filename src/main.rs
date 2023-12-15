@@ -1,13 +1,13 @@
 #![allow(non_snake_case)]
-use std::{collections::HashMap, env, convert::Infallible};
+use std::{collections::HashMap, convert::Infallible};
 
-pub use sICmulador::{Instruction, ProgCounter};
-use sICmulador::{MemAddr, Processador, Reg, Registers, Value16Bit, Memory, norm_n, read_instructions, FileError, ExecutionError, read_memory, print_info, cli::Args, read_io_once, read_registers};
 use clap::Parser;
+use sICmulador::*;
+pub use sICmulador::CliArgs;
 
 
 fn main() -> Result<Infallible, ExecutionError> {
-    let args = Args::parse();
+    let args = CliArgs::parse();
 
     let instructions = read_instructions(&args.instruction_file)?;
     let mem_name = args.memory_file;
