@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 use std::{collections::HashMap, env, convert::Infallible};
 
-pub use SISA_sim::{Instruction, ProgCounter};
-use SISA_sim::{MemAddr, Processador, Reg, Registers, Value16Bit, Memory, norm_n, read_instructions, FileError, ExecutionError, read_memory, print_info};
+pub use sICmulador::{Instruction, ProgCounter};
+use sICmulador::{MemAddr, Processador, Reg, Registers, Value16Bit, Memory, norm_n, read_instructions, FileError, ExecutionError, read_memory, print_info};
 
 
 fn main() -> Result<Infallible, ExecutionError> {
