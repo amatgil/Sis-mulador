@@ -10,9 +10,6 @@ of low level code.
 ## IO
 Use `[cpu].update_io(new_io)` to change the IO status in between `execute`s.
 
-## Branching
-They're implemented but untested because I am lazy
-
 ## NOTE
 It assumes the input is wellformed. Do not feed it instuctions like
 

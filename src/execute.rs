@@ -1,10 +1,10 @@
 use std::{
     collections::HashMap,
-    fmt::{self, Display},
-    ops::{Index, IndexMut}, mem::transmute,
+    fmt,
+    ops::{Index, IndexMut}, mem::transmute, process::{ExitCode, Termination},
 };
 
-use crate::{norm_n, Instruction, ParseError, print_info};
+use crate::{Instruction, print_info, ParseError, norm_n};
 
 const DEFAULT_MEMORY_WORD: i16 = 0x0000;
 const INSTRUCTS_SLOW: [&str; 4] = ["LD", "LDB", "ST", "STB"];
@@ -56,20 +56,18 @@ impl Processador {
             Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) <= transmute(self.regs[b].0)) as i16 },
 
             Instruction::LD { a, d, offset }  => self.regs[d].0 = self.memory.get_word(&(se_6(offset.0) + self.regs[a].0).into()).unwrap_or_else(|| {
-                print_info(&format!("[INFO]: Tried to access uninitialized memory (WORD) at addr: '{}'", se_6(offset.0) + self.regs[a].0));
-                panic!("Tried to access uninited memory");
+                print_info(&format!("Tried to access uninitialized memory (WORD) at addr: '{}'", se_6(offset.0) + self.regs[a].0));
                 DEFAULT_MEMORY_WORD // We use the default instead of crashing
             }), 
             Instruction::LDB { a, d, offset } => self.regs[d].0 = se_8(self.memory.get_byte(&(se_6(offset.0) + self.regs[a].0).into()).unwrap_or_else(||{
-                print_info(&format!("[INFO]: Tried to access uninitialized memory (BYTE) at addr: '{}'", se_6(offset.0) + self.regs[a].0));
-                panic!("Tried to access uninited memory");
+                print_info(&format!("Tried to access uninitialized memory (BYTE) at addr: '{}'", se_6(offset.0) + self.regs[a].0));
                 DEFAULT_MEMORY_WORD as i8 // We use the default instead of crashing
             })), 
             Instruction::ST  { a, b, offset } => self.memory.insert_word(&(self.regs[b].0 + se_6(offset.0)).into(), self.regs[a].0),
             Instruction::STB { a, b, offset } => self.memory.insert_byte(&(self.regs[b].0 + se_6(offset.0)).into(), (self.regs[a].0 & 0xF) as i8),
 
-            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 = (self.pc.0 as i16 + se_8(offset.0)) as u16 }
-            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 = (self.pc.0 as i16 + se_8(offset.0)) as u16 }
+            Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 = (self.pc.0 as i16 + 2*se_8(offset.0)) as u16 }
+            Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 = (self.pc.0 as i16 + 2*se_8(offset.0)) as u16 }
 
             Instruction::MOVI { d, n }        => self.regs[d].0 = se_8(n.0),
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= (n.0 as i16) << 8,
@@ -77,23 +75,21 @@ impl Processador {
             Instruction::IN { d, n }          => self.regs[d].0 = self.io[n].0,
             Instruction::OUT { d, n }         => println!("[OUTPUT]: value '0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[d].0, n),
 
-            Instruction::NOP                  => {}
+            Instruction::NOP                  => {},
         }
         println!();
     }
 
     pub fn execute_next(&mut self, print_status: bool) {
-        print_info(&format!("[INFO]: Executing instruction at PC = {}", self.pc));
+        print_info(&format!("Executing instruction at PC = {}", self.pc));
         let inst = self.instr_memory.get(&(self.pc.0 as i16).into());
         let inst = match inst {
             Some(i) => i.clone(),
             None => {
                 println!("The number of instructions done is: {:?}", self.instrs_fetes);
-                println!("Amb harvard uni (t.c. 4000), seria {}", (self.instrs_fetes.fast + self.instrs_fetes.slow)*4000);
-                println!("Amb harvard multi (t.c. 1000), seria {}", (self.instrs_fetes.fast*3 + self.instrs_fetes.slow*4)*1000);
-                println!("Amb Neumann (t.c. 1400), seria {}", (self.instrs_fetes.fast*3 + self.instrs_fetes.slow*4)*1400);
-                panic!("There was no instruction to read when the PC = {} (dec '{}'). Instead of devolving into gibberish, the simulation has shut down 'gracefully' (for some definition of 'gracefully')",
+                println!("There was no instruction to read when the PC = {} (dec '{}'). Instead of devolving into gibberish, the simulation has shut down 'gracefully' (for some definition of 'gracefully')",
                 self.pc, self.pc.0);
+                std::process::exit(0);
             },
         };
         self.execute_raw(&inst);
@@ -115,7 +111,7 @@ impl Memory {
         let _ = self.0.insert(addr.clone(), MemValue(val));
     }
     pub fn insert_word(&mut self, addr: &MemAddr, val: i16) {
-        let high = ((val & 0xFF00u16 as i16) >> 8) as i8;
+        let high = ((val & 0xFF00u16 as i16) >> 7) as i8;
         let low = (val & 0x00FF) as i8;
         let addr = addr.align();
 
@@ -267,7 +263,7 @@ impl fmt::Display for Processador {
         let mut out = String::from("[--------STATUS-------]: \n");
         out.push_str(&format!("- Regs: "));
         for (i, reg) in self.regs.0.iter().enumerate() {
-            out.push_str(&format!("\x1b[1;4;31mR{i}: 0x{:0>4X}\x1b[0m // ", reg.0));
+            out.push_str(&format!("\x1b[1;4;31mR{i}: 0x{:0>4X}\x1b[0m,  ", reg.0));
         }
         out.push('\n');
         out.push_str(&format!("- Memory: \x1b[1;4;34m{:?}\x1b[0m", self.memory.0));
@@ -277,29 +273,13 @@ impl fmt::Display for Processador {
     }
 }
 
-/*
-fn sign_extend(n: &MemValue) -> MemValue {
-    let val = if n.0 < (1 << 7) { n.0 } else { n.0 | unsafe { transmute::<u16, i16>(0xFF00) } };
-    print!("[INFO]: Sign extended 0x{:0>4X} into 0x{:0>4X}", n.0, val);
 
-    MemValue(val)
-}
-*/
+pub fn se_4(n: i16) -> i16 {
+    let n = n as i16;
+    let val = if n < (1 << 3) { n } else { n | unsafe { transmute::<u16, i16>(0xFFF0) } };
+    print_info(&format!("Sign extended 0x{:0>4X} into 0x{:0>4X}", n, val));
 
-impl PartialOrd for MemAddr {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { Some(self.0.cmp(&other.0)) }
-}
-impl Ord for MemAddr {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering { self.0.cmp(&other.0) }
-}
-
-impl Display for Memory {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut vals: Vec<_> = self.0.iter().collect();
-        vals.sort_by(|a, b| a.0.cmp(b.0));
-
-        write!(f, "{:?}", vals)
-    }
+    val
 }
 
 fn se_6(n: i8) -> i16 {
