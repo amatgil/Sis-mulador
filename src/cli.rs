@@ -1,6 +1,7 @@
 use clap::Parser;
 
 #[derive(Parser, Debug)]
+/// All cli arguments will be placed into this struct, to be able to be used in main
 pub struct CliArgs {
     /// Which instructions to execute
     pub instruction_file: String,
