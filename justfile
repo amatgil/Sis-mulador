@@ -6,7 +6,7 @@ package:
 	rm -rf pkg/
 	cargo build --release
 	just make-docs
-	mkdir pkg/
-	cp -r ./target/release/sICmulador pkg/
-	cp -r ./target/doc/sICmulador/ pkg/
+	mkdir -p pkg/
+	cp ./target/release/sICmulador pkg/
 	cp -r ./examples pkg/
+	cp -r ./target/doc/ pkg/ # Add docs, TODO: Make proper
