@@ -59,7 +59,7 @@
 //! has already helped me).
 //! 
 //! ## Roadmap
-//! Use `as` more (note the sign extension remarks when upcasting): https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+//! Use `as` more (note the sign extension remarks when upcasting): [Type cast expressions](https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions)
 
 use std::num::ParseIntError;
 
