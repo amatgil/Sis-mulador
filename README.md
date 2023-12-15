@@ -58,4 +58,5 @@ writing down code. Just, like, assume they're the same. I'm protecting you from 
 has already helped me).
 
 ## Roadmap
-Use `as` more (note the sign extension remarks when upcasting): https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+- Use `as` more (note the sign extension remarks when upcasting): https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
+- Implement `JALR` when we know more about it
