@@ -5,7 +5,7 @@ use self::execute::{RegLabel, ImmediateN6, ImmediateN8, MemAddr};
 #[allow(missing_docs)]
 #[derive(Debug, Clone)]
 pub enum Instruction {
-    /// OP == 00
+    // OP == 00
     AND {
         a: RegLabel,
         b: RegLabel,
@@ -125,8 +125,9 @@ pub enum Instruction {
 }
 
 impl Instruction {
-    /// Extract the verb that the instruction uses. For example, in `ADD R1, R2, R3`, the verb
-    /// would be `ADD`
+    /// Extract the verb that the instruction uses. 
+    ///
+    /// For example, in `ADD R1, R2, R3`, the verb would be `ADD`
     pub fn get_verb(&self) -> String {
         match self {
             Instruction::AND    { .. } => "AND",

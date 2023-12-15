@@ -21,7 +21,9 @@ impl From<FileError> for ExecutionError {
     }
 }
 
-/// Read instruction list from file, in the TOML format. They must be separated by newlines. For example:
+/// Read instruction list from file, in the TOML format. They must be separated by newlines. 
+///
+/// For example:
 /// ```txt
 /// MOVI R5, 0
 /// MOVI R2, 16
@@ -55,7 +57,9 @@ pub fn read_instructions(filename: &impl AsRef<Path>) -> Result<HashMap<MemAddr,
 }
 
 
-/// Read IO settings from file, in the TOML format. They must be separated by newlines. For example:
+/// Read IO settings from file, in the TOML format. They must be separated by newlines. 
+///
+/// For example:
 /// ```txt
 /// 1 = "0x0001"
 /// 0 = "0x0005"
@@ -75,7 +79,9 @@ pub fn read_io_once(filename: &impl AsRef<Path>) -> Result<HashMap<MemAddr, Valu
     Ok(io)
 }
 
-/// Read memory list from file, in the TOML format. They must be separated by newlines. For example:
+/// Read memory list from file, in the TOML format. They must be separated by newlines. 
+///
+/// For example:
 /// ```txt
 /// 0x0022 = "0x0000"
 /// 0x0024 = "0x0002"
@@ -103,7 +109,9 @@ pub fn read_memory(filename: &impl AsRef<Path>) -> Result<Memory, FileError> {
     Ok(memory)
 }
 
-/// Read memory list from file, in the TOML format. They must be separated by newlines. For example:
+/// Read memory list from file, in the TOML format. They must be separated by newlines. 
+///
+/// For example:
 /// ```txt
 /// 0
 /// 0
