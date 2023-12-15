@@ -45,7 +45,10 @@ fn main() -> Result<Infallible, ExecutionError> {
         instructions,
         io_system,
     );
+    print_info("\n\nStarting with state:");
     println!("{cpu}");
+
+    print_info("Starting execution...");
     loop { cpu.execute_next(true); }
 }
 

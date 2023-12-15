@@ -129,10 +129,9 @@ pub fn read_registers(filename: &impl AsRef<Path>) -> Result<Registers, FileErro
 
     let mut registers = Registers::default();
     for (i, v) in contents.lines().enumerate() {
-        print_info(&format!("Pushing {i}, {v}"));
         let Ok(v) = v.parse() else { return Err(FileError::UnparsableRegister) };
+        print_info(&format!("R{i} = {:X} (dec 0x{0})", v));
         registers[&RegLabel(i as u8)] = Reg(v);
-
     }
     Ok(registers)
 }

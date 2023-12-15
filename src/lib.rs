@@ -1,7 +1,10 @@
 #![allow(non_snake_case)]
 #![warn(missing_docs)]
 //! 
-//! The code is incredibly self documenting (on purpose). Usage is below.
+//! A fully fledged SISA instruction interpreter and simulator.
+//!
+//! The code is incredibly self documenting (on purpose), using the newtype pattern wherever
+//! helpfuly. Usage of the binary is below.
 //! 
 //! (the ergonomics aren't the best, but it works Well Enough)
 //! 
@@ -70,7 +73,6 @@ mod spec;
 mod input;
 mod cli;
 
-
 pub use input::*;
 pub use execute::{Memory, IOSystem, Registers, ProgCounter, Processador};
 pub use spec::Instruction;
@@ -89,21 +91,15 @@ pub enum ExecutionError {
 pub(crate) fn norm_n(input: &str) -> Result<u16, ParseIntError> {
     if input.len() <= 2 || &input[..2] != "0x" { // Is dec here
         if input.chars().next().unwrap() == '-' {
-            Ok(
-                -((input[1..].parse::<u16>()?) as i16) as u16
-            )
-        } else {
-            input.parse()
-        }
+            Ok(-((input[1..].parse::<u16>()?) as i16) as u16)
+        } else { input.parse() }
     } else {
         u16::from_str_radix(&input[2..], 16)
     }
 }
 
 /// Print information in a darker, less noticeable color prefixed by `[INFO]:`
-pub fn print_info(info: &str) {
-    println!("[INFO]: \x1b[37m{}\x1b[0m",info);
-}
+pub fn print_info(info: &str) { println!("[INFO]: \x1b[37m{}\x1b[0m",info); }
 
 #[test]
 fn test_norm() {
