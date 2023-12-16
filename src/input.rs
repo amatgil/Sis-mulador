@@ -46,9 +46,13 @@ pub fn read_instructions(filename: &impl AsRef<Path>) -> Result<HashMap<MemAddr,
     let instructions = 
         contents.lines().enumerate()
         .map(|(i, line)| {
+            let line = line.trim();
             match line.try_into() {
                 Ok(ins) => Ok((MemAddr((i * 2) as i16), ins)),
-                Err(_) => Err(FileError::InstrucNotRecognized),
+                Err(e) => {
+                    print_info(&format!("Did not recognize instruction: '{}' with error: {e:?}", line));
+                    Err(FileError::InstrucNotRecognized)
+                },
             }
             // TODO: Rewrite... whatever this is
         }).collect::<Result<HashMap<MemAddr, Instruction>, FileError>>().or(Err(FileError::InstrucNotRecognized))?; 

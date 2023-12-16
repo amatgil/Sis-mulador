@@ -1,6 +1,6 @@
 use std::num::{ParseIntError, TryFromIntError};
 
-use crate::{spec::Instruction, execute::RegLabel};
+use crate::{spec::Instruction, execute::RegLabel, print_info};
 
 macro_rules! generate_parse_match {
     ($verb:ident, $parts:ident, $($name:ident),*$(,)?) => {
@@ -13,7 +13,7 @@ macro_rules! generate_parse_match {
                     b: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 },
             )*
-            // Has no destination, is special
+            // Has no destination, is special lil boi
             "NOT" => Instruction::NOT  {
                 d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?
@@ -59,6 +59,16 @@ macro_rules! generate_parse_match {
                 offset: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
             },
+            "OUT" => Instruction::OUT {
+                    d: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+                    n: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+            },
+            "IN" => Instruction::IN {
+                    d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                    n: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
+            },
+            "NOP" =>  Instruction::NOP,
+
             x => return Err(ParseError::UnrecognizedInstruction(x.into()))
         })
     }
@@ -101,21 +111,6 @@ impl TryFrom<&str> for Instruction {
         let mut parts = value.split(" ");
         let verb = parts.next().ok_or(ParseError::MissingVerb)?;
         //print_info(&format!("Verb parsed is: {verb}"));
-
-        // Special cases
-        if verb == "NOP" {
-            return Ok(Instruction::NOP);
-        } else if verb == "OUT" {
-            return Ok(Instruction::OUT {
-                d: parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
-                n: parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
-            });
-        } else if verb == "IN" {
-            return Ok(Instruction::IN {
-                d: parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
-                n: parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
-            });
-        }
 
         generate_parse_match!(
             verb, parts, AND, OR, XOR, ADD, SUB, SHA, SHL, CMPLT, CMPLE, CMPEQ, CMPLTU, CMPLEU

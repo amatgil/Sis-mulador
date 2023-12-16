@@ -9,3 +9,9 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.4.11", features = ["derive"] }
 toml = "0.8.8"
+
+[profile.release]
+strip = true  # Automatically strip symbols from the binary.
+opt-level = "z"  # Optimize for size.
+lto = true
+codegen-units = 1 # Smaller code at the cost of compile times

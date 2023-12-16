@@ -89,6 +89,7 @@ pub enum ExecutionError {
 }
 
 pub(crate) fn norm_n(input: &str) -> Result<u16, ParseIntError> {
+    let input = input.replace(",", "");
     if input.len() <= 2 || &input[..2] != "0x" { // Is dec here
         if input.chars().next().unwrap() == '-' {
             Ok(-((input[1..].parse::<u16>()?) as i16) as u16)

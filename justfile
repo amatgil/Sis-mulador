@@ -2,7 +2,7 @@ make-docs:
 	cargo doc --no-deps
 
 
-package:
+pkg:
 	rm -rf pkg/
 	cargo build --release
 	just make-docs

@@ -78,7 +78,7 @@ impl Processador {
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= (n.0 as i16) << 8,
 
             Instruction::IN { d, n }          => self.regs[d].0 = self.io.get(n).expect("Tried to access non existant IO address").0,
-            Instruction::OUT { d, n }         => println!("[OUTPUT]: value '0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[d].0, n),
+            Instruction::OUT { d, n }         => println!("[OUTPUT]: value '0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[n].0, d),
 
             Instruction::NOP                  => {},
         }

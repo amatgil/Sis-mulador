@@ -118,8 +118,8 @@ pub enum Instruction {
         n: MemAddr,
     },
     OUT {
-        d: RegLabel,
-        n: MemAddr,
+        d: MemAddr,
+        n: RegLabel,
     },
     NOP,
 }
