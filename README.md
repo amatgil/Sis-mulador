@@ -39,10 +39,10 @@ File must contain eight lines (or less, for a computer with less registers), eac
 0
 0
 5
-10
+17
 ```
 
-Register `6` will hold `0x5` and Register `7` will hold `0xA`.
+Register `6` will hold `0x0005` and Register `7` will hold `0x0011`.
 
 You cannot use more than eight registers, it will panic (this is intended behavior).
 
@@ -58,5 +58,6 @@ writing down code. Just, like, assume they're the same. I'm protecting you from 
 has already helped me).
 
 ## Roadmap
+- Add a preprocessor for directives, labels, etc.
 - Use `as` more (note the sign extension remarks when upcasting): https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
 - Implement `JALR` when we know more about it
