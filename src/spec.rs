@@ -5,7 +5,6 @@ use self::execute::{RegLabel, ImmediateN6, ImmediateN8, MemAddr};
 #[allow(missing_docs)]
 #[derive(Debug, Clone)]
 pub enum Instruction {
-    // OP == 00
     AND {
         a: RegLabel,
         b: RegLabel,
@@ -45,8 +44,6 @@ pub enum Instruction {
         b: RegLabel,
         d: RegLabel,
     },
-
-    /// OP == 01
     CMPLT {
         a: RegLabel,
         b: RegLabel,
