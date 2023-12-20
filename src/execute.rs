@@ -61,12 +61,14 @@ impl Processador {
             Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) <= transmute(self.regs[b].0)) as i16 },
 
             Instruction::LD { a, d, offset }  => self.regs[d].0 = self.memory.get_word(&(se_6(offset.0) + self.regs[a].0).into()).unwrap_or_else(|| {
-                print_info(&format!("Tried to access uninitialized memory (WORD) at addr: '{}'", se_6(offset.0) + self.regs[a].0));
-                DEFAULT_MEMORY_WORD // We use the default instead of crashing
+                print_info(&format!("Tried to access uninitialized memory (WORD) at addr: '{}' (hex 0x{0:X})", se_6(offset.0) + self.regs[a].0));
+                panic!();
+                //DEFAULT_MEMORY_WORD // We use the default instead of crashing
             }), 
             Instruction::LDB { a, d, offset } => self.regs[d].0 = se_8(self.memory.get_byte(&(se_6(offset.0) + self.regs[a].0).into()).unwrap_or_else(||{
                 print_info(&format!("Tried to access uninitialized memory (BYTE) at addr: '{}'", se_6(offset.0) + self.regs[a].0));
-                DEFAULT_MEMORY_WORD as i8 // We use the default instead of crashing
+                panic!();
+                //DEFAULT_MEMORY_WORD as i8 // We use the default instead of crashing
             })), 
             Instruction::ST  { a, b, offset } => self.memory.insert_word(&(self.regs[b].0 + se_6(offset.0)).into(), self.regs[a].0),
             Instruction::STB { a, b, offset } => self.memory.insert_byte(&(self.regs[b].0 + se_6(offset.0)).into(), (self.regs[a].0 & 0xF) as i8),
