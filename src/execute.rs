@@ -311,8 +311,24 @@ impl fmt::Display for Processador {
             out.push_str(&format!("\x1b[1;4;31mR{i}: 0x{:0>4X}\x1b[0m,  ", reg.0));
         }
         out.push('\n');
-        out.push_str(&format!("- Memory: \x1b[1;4;34m{:?}\x1b[0m", self.memory.0));
+        out.push_str(&format!("- Memory: \x1b[1;4;34m{:}\x1b[0m", self.memory));
         out.push_str("\n[-------END_STATUS-------]\n\n\n\n\n");
+
+        write!(f, "{out}")
+    }
+}
+
+// While the debug print of a HashMap works well enough, it is unordered. This makes actually using
+// it kind of terrible, so this [fmt::Display] sorts it by address first and then prints it
+impl fmt::Display for Memory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut out = String::new();
+        let mut pairs: Vec<(i16, i8)> = self.0.iter().map(|(k, v)| (k.0, v.0)).collect();
+        pairs.sort_by(|a, b| a.0.cmp(&b.0));
+        for pair in pairs {
+            out.push_str(&format!("0x{:0>4X}: 0x{:0>2X} | ", pair.0, pair.1));
+        }
+
 
         write!(f, "{out}")
     }
