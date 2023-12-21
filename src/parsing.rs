@@ -67,7 +67,10 @@ macro_rules! generate_parse_match {
                     d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                     n: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
             },
-            "JALR" => panic!("Parsing not yet done"),
+            "JALR" => Instruction::JALR { // TODO: Test
+                    a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+                    d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
+            },
             "NOP" =>  Instruction::NOP,
 
             x => return Err(ParseError::UnrecognizedInstruction(x.into()))
