@@ -118,6 +118,10 @@ pub enum Instruction {
         d: MemAddr,
         n: RegLabel,
     },
+    JALR {
+        a: RegLabel,
+        d: RegLabel,
+    },
     NOP,
 }
 
@@ -151,6 +155,7 @@ impl Instruction {
             Instruction::MOVHI  { .. } => "MOVHI",
             Instruction::IN     { .. } => "IN",
             Instruction::OUT    { .. } => "OUT",
+            Instruction::JALR   { .. } => "JALR",
             Instruction::NOP           => "NOP",
         }.into()
     }

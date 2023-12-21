@@ -52,36 +52,29 @@ impl Processador {
             Instruction::SUB { a, b, d }      => self.regs[d] = self.regs[a] - self.regs[b],
             Instruction::SHA { a, b, d }      => self.regs[d] = self.regs[a].sha(self.regs[b]),
             Instruction::SHL { a, b, d }      => self.regs[d] = self.regs[a] << self.regs[b], // Implemented to do it using the last 5 bits
-
             Instruction::CMPEQ { a, b, d }    => self.regs[d].0 = (self.regs[a].0 == self.regs[b].0) as i16,
             Instruction::CMPLT  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 < self.regs[b].0) as i16,
             Instruction::CMPLE  { a, b, d }   => self.regs[d].0 = (self.regs[a].0 <= self.regs[b].0) as i16,
             // TODO: Remove unnecssary use of transmute (use `as`)
             Instruction::CMPLTU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) < transmute(self.regs[b].0)) as i16 },
             Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) <= transmute(self.regs[b].0)) as i16 },
-
             Instruction::LD { a, d, offset }  => self.regs[d].0 = self.memory.get_word(&(se_6(offset.0) + self.regs[a].0).into()).unwrap_or_else(|| {
                 print_info(&format!("Tried to access uninitialized memory (WORD) at addr: '{}' (hex 0x{0:X})", se_6(offset.0) + self.regs[a].0));
                 panic!();
-                //DEFAULT_MEMORY_WORD // We use the default instead of crashing
             }), 
             Instruction::LDB { a, d, offset } => self.regs[d].0 = se_8(self.memory.get_byte(&(se_6(offset.0) + self.regs[a].0).into()).unwrap_or_else(||{
-                print_info(&format!("Tried to access uninitialized memory (BYTE) at addr: '{}'", se_6(offset.0) + self.regs[a].0));
+                print_info(&format!("Tried to access uninitialized memory (BYTE) at addr: '{}' (hex 0x{0:X})", se_6(offset.0) + self.regs[a].0));
                 panic!();
-                //DEFAULT_MEMORY_WORD as i8 // We use the default instead of crashing
             })), 
             Instruction::ST  { a, b, offset } => self.memory.insert_word(&(self.regs[b].0 + se_6(offset.0)).into(), self.regs[a].0),
             Instruction::STB { a, b, offset } => self.memory.insert_byte(&(self.regs[b].0 + se_6(offset.0)).into(), (self.regs[a].0 & 0xF) as i8),
-
             Instruction::BZ  { a, offset }    => if self.regs[a].0 == 0 {self.pc.0 = (self.pc.0 as i16 + 2*se_8(offset.0)) as u16 }
             Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 = (self.pc.0 as i16 + 2*se_8(offset.0)) as u16 }
-
             Instruction::MOVI { d, n }        => self.regs[d].0 = se_8(n.0),
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= (n.0 as i16) << 8,
-
             Instruction::IN { d, n }          => self.regs[d].0 = self.io.get(n).expect("Tried to access non existant IO address").0,
             Instruction::OUT { d, n }         => println!("[OUTPUT]: value '0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[n].0, d),
-
+            Instruction::JALR { a, d }        => { self.regs[d].0 = self.pc.0 as i16;   self.pc.0 = self.regs[a].0 as u16; }, // TODO: Test
             Instruction::NOP                  => {},
         }
         println!();
