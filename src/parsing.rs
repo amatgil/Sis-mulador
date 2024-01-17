@@ -1,6 +1,6 @@
 use std::num::{ParseIntError, TryFromIntError};
 
-use crate::{spec::Instruction, execute::RegLabel, print_info};
+use crate::{spec::Instruction, execute::RegLabel};
 
 macro_rules! generate_parse_match {
     ($verb:ident, $parts:ident, $($name:ident),*$(,)?) => {
@@ -66,10 +66,6 @@ macro_rules! generate_parse_match {
             "IN" => Instruction::IN {
                     d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                     n: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
-            },
-            "JALR" => Instruction::JALR { // TODO: Test
-                    a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
-                    d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
             },
             "NOP" =>  Instruction::NOP,
 

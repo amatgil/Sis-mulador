@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path, fs::File, io::Read, fmt};
+use std::{collections::HashMap, path::Path, fs::File, io::Read};
 
 use toml::Table;
 

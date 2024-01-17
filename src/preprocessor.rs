@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Read;
 
 use crate::{ProgCounter, Memory, Instructions, FileError, execute::MemAddr};
-use nom::{IResult, bytes::complete::{tag, take_until}, character::complete::newline};
+use nom::{IResult, bytes::complete::{tag, take_until}};
 use anyhow::Context;
 
 const DEFAULT_SPACE_FILLER_VALUE: i8 = 0;
@@ -34,6 +34,10 @@ pub struct Input {
     pub instructions: Instructions
 }
 
+/// The requirements for the file are quite particular. They are:
+/// - The first line must be '.data', followed by a sequence of newline separated directives
+/// (listed below)
+/// - 
 pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) -> anyhow::Result<Input> {
     let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
     let mut input = String::new();
@@ -53,7 +57,7 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
 
     let (memory, env, ptrs) = parse_directives(directives, mem_addr)?;
     println!("{memory}"); dbg!(&env, &ptrs);
-    let instructions = parse_instructions(text_area, env, ptrs)?;
+    let instructions = parse_instructions(text_area, env, ptrs, instr_addr)?;
 
 
     Ok(Input {
@@ -101,9 +105,7 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
             ".even" => { if !mem_addr.is_even() { mem_addr.inc_one();} },
             etiq => {
                 let etiq = &etiq[0..etiq.len() - 1]; // Remove colon
-                dbg!(etiq);
                 let command: &str = parts.next().ok_or(ParsingError::MissingCommandAfterLabel { label: etiq.to_string() })?;
-                dbg!(command);
                 match command {
                     ".byte" => {
                         ptrs.insert(etiq.into(), mem_addr.clone());
@@ -118,7 +120,6 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
                         ptrs.insert(etiq.into(), mem_addr.clone());
                         let words: Vec<_> = parts.map(|b| b.parse::<i16>()).collect();
                         for word in words {
-                            dbg!(&word);
                             let word = word?;
                             memory.insert_word(&mem_addr, word);
                             mem_addr.inc();
@@ -137,6 +138,17 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
     ))
 }
 
-fn parse_instructions(directives: &str, env: Aliases, ptrs: Pointers) -> anyhow::Result<Instructions> {
+fn parse_instructions(text: &str, mut env: Aliases, mut ptrs: Pointers, mut pc: ProgCounter) -> anyhow::Result<Instructions> {
+    let mut labels_addrs = HashMap::new();
+    for line in text.lines() {
+        let line = line.trim();
+        if let Some(colon_idx) = line.find(':') {
+            let etiq = &line[0..colon_idx];
+            labels_addrs.insert(etiq.to_string(), pc.clone());
+            eprintln!("Line '{line}' has label '{etiq}' at addr {}", pc);
+            pc.advance();
+        }
+    }
+
     todo!()
 }
