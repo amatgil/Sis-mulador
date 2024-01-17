@@ -2,12 +2,11 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 
-use crate::ProgCounter;
-use crate::{Instruction, Memory, Registers, Instructions, FileError, execute::MemAddr};
-use nom::IResult;
-use nom::bytes::complete::tag;
-use nom::bytes::complete::take_until;
-use anyhow::{Context, Result};
+use crate::{ProgCounter, Memory, Instructions, FileError, execute::MemAddr};
+use nom::{IResult, bytes::complete::{tag, take_until}, character::complete::newline};
+use anyhow::Context;
+
+const DEFAULT_SPACE_FILLER_VALUE: i8 = 0;
 
 #[derive(Debug, thiserror::Error)]
 enum ParsingError {
@@ -52,8 +51,9 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
     let (_input, text_area) = text_area.map_err(|e| e.to_owned()).context("could not parse the data section")?;
 
 
-    let (memory, env) = dbg!(parse_directives(directives, mem_addr))?;
-    let instructions = parse_instructions(text_area, env)?;
+    let (memory, env, ptrs) = parse_directives(directives, mem_addr)?;
+    println!("{memory}"); dbg!(&env, &ptrs);
+    let instructions = parse_instructions(text_area, env, ptrs)?;
 
 
     Ok(Input {
@@ -64,11 +64,13 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
 }
 
 type Aliases = HashMap<String, String>;
+type Pointers = HashMap<String, MemAddr>;
 
-fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(Memory,Aliases)> {
+fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(Memory,Aliases, Pointers)> {
     let mut memory = Memory::new();
 
-    let mut env: Aliases = HashMap::new();
+    let mut env:   Aliases = HashMap::new();
+    let mut ptrs: Pointers = HashMap::new();
 
     for line in directives.lines().filter(|l| !l.is_empty()) {
         let line = line.trim();
@@ -81,8 +83,7 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
                 parts.next().ok_or(ParsingError::MissingArgument { command: command.to_string() })?.into());
             },
             ".space" => {
-                let n_items = parts.next().ok_or(ParsingError::MissingArgument { command: command.to_string() })?;
-                let n_items: usize = n_items.parse()?;
+                let n_items = parts.next().ok_or(ParsingError::MissingArgument { command: command.to_string() })?.parse()?;
                 if let Some(item) = parts.next() {
                     memory.insert_byte(&mem_addr, item.parse()?); mem_addr.inc();
                     for _ in 0..n_items - 1 {
@@ -90,14 +91,39 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
                         memory.insert_byte(&mem_addr, val);
                         mem_addr.inc();
                     }
+                } else {
+                    for _ in 0..n_items {
+                        memory.insert_byte(&mem_addr, DEFAULT_SPACE_FILLER_VALUE);
+                        mem_addr.inc();
+                    }
                 }
             },
-            ".even" => {},
+            ".even" => { if !mem_addr.is_even() { mem_addr.inc_one();} },
             etiq => {
+                let etiq = &etiq[0..etiq.len() - 1]; // Remove colon
+                dbg!(etiq);
                 let command: &str = parts.next().ok_or(ParsingError::MissingCommandAfterLabel { label: etiq.to_string() })?;
+                dbg!(command);
                 match command {
-                    ".byte" => {},
-                    ".word" => {},
+                    ".byte" => {
+                        ptrs.insert(etiq.into(), mem_addr.clone());
+                        let bytes: Vec<_> = line.split(" ").map(|b| b.parse::<i8>()).collect();
+                        for byte in bytes {
+                            let byte = byte?;
+                            memory.insert_byte(&mem_addr, byte);
+                            mem_addr.inc_one();
+                        }
+                    },
+                    ".word" => {
+                        ptrs.insert(etiq.into(), mem_addr.clone());
+                        let words: Vec<_> = parts.map(|b| b.parse::<i16>()).collect();
+                        for word in words {
+                            dbg!(&word);
+                            let word = word?;
+                            memory.insert_word(&mem_addr, word);
+                            mem_addr.inc();
+                        }
+                    },
                     com => return Err(ParsingError::UnrecognizedCommandAfterLabel { label: etiq.into(), command: com.into() })?,
                 }
             },
@@ -107,9 +133,10 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
     Ok((
         memory,
         env,
+        ptrs
     ))
 }
 
-fn parse_instructions(directives: &str, env: Aliases) -> anyhow::Result<Instructions> {
+fn parse_instructions(directives: &str, env: Aliases, ptrs: Pointers) -> anyhow::Result<Instructions> {
     todo!()
 }

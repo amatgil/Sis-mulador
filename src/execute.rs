@@ -237,7 +237,9 @@ impl From<i16> for MemAddr {
 }
 
 impl MemAddr {
-    pub fn inc(&mut self) { self.0 += 2; }
+    pub fn inc(&mut self)         { self.0 += 2; }
+    pub fn inc_one(&mut self)     { self.0 += 1; }
+    pub fn is_even(&self) -> bool { self.0 % 2 == 0 }
 }
 
 impl ProgCounter {
