@@ -3,7 +3,9 @@
 
 #![doc = include_str!("../README.md")]
 
-use std::num::ParseIntError;
+use std::{num::ParseIntError, fmt::Display, collections::HashMap};
+
+type Instructions = HashMap<MemAddr, Instruction>;
 
 mod calc;
 mod execute;
@@ -11,11 +13,13 @@ mod parsing;
 mod spec;
 mod input;
 mod cli;
+mod preprocessor;
 
 pub use input::*;
 pub use execute::{Memory, IOSystem, Registers, ProgCounter, Processador};
 pub use spec::Instruction;
 pub use cli::CliArgs;
+use spec::execute::MemAddr;
 
 /// Main error enum for execution. Mostly seen at the start of execution.
 #[derive(Debug)]
@@ -23,9 +27,23 @@ pub enum ExecutionError {
     /// Did not provide mandatory instruction file as an argument
     MissingInstructionsFile,
 
-    /// Filesystem related errors
+    /// Parsing related errors
+    Parsing(ParseIntError),
+
     File(FileError),
 }
+
+impl Display for ExecutionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            ExecutionError::MissingInstructionsFile=>"no instructions file was provided".into(),
+            ExecutionError::Parsing(e)=>format!("encountered a parsing related error: {e}"),
+            ExecutionError::File(f) => format!("encountered a file related error: {f:?}"),
+        })
+    }
+}
+
+impl std::error::Error for ExecutionError {}
 
 pub(crate) fn norm_n(input: &str) -> Result<u16, ParseIntError> {
     let input = input.replace(",", "");
@@ -62,3 +80,5 @@ fn test_norm() {
         assert_eq!(norm_n(k), Ok(v));
     }
 }
+
+

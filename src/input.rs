@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path, fs::File, io::Read};
 
 use toml::Table;
 
-use crate::{execute::{Reg, RegLabel, Registers, Value16Bit, Memory, MemAddr}, print_info, norm_n, ExecutionError, spec::Instruction};
+use crate::{execute::{Reg, RegLabel, Registers, Value16Bit, Memory, MemAddr}, print_info, norm_n, ExecutionError, spec::Instruction, Instructions};
 
 /// Describes all variants of filesystem errors, for using in [ExecutionError]
 #[derive(Debug)]
@@ -37,7 +37,7 @@ impl From<FileError> for ExecutionError {
 /// ADDI R2, R2, -1
 /// BNZ R2, -7
 /// ```
-pub fn read_instructions(filename: &impl AsRef<Path>) -> Result<HashMap<MemAddr, Instruction>, FileError> {
+pub fn read_instructions(filename: &impl AsRef<Path>) -> Result<Instructions, FileError> {
     let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
 
     let mut contents = String::new();

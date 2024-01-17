@@ -4,7 +4,7 @@ use::std::{
     ops::{Index, IndexMut}, mem::transmute,
 };
 
-use crate::{print_info, norm_n};
+use crate::{print_info, norm_n, Instructions};
 use crate::parsing::ParseError;
 use crate::spec::Instruction;
 
@@ -17,7 +17,7 @@ impl Processador {
         init_regs: Registers,
         init_mem: Memory,
         init_pc: ProgCounter,
-        instructions: HashMap<MemAddr, Instruction>,
+        instructions: Instructions,
         init_io: HashMap<MemAddr, Value16Bit>,
     ) -> Self {
         Self {
@@ -200,7 +200,7 @@ pub struct Processador {
     regs: Registers,
     memory: Memory,
     io: IOSystem,
-    instr_memory: HashMap<MemAddr, Instruction>,
+    instr_memory: Instructions,
     pc: ProgCounter,
     instrs_fetes: NumInstruccions,
 }
