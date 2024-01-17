@@ -1,21 +1,28 @@
-use std::{collections::HashMap, path::Path, fs::File, io::Read};
+use std::{collections::HashMap, path::Path, fs::File, io::Read, fmt};
 
 use toml::Table;
 
-use crate::{execute::{Reg, RegLabel, Registers, Value16Bit, Memory, MemAddr}, print_info, norm_n, ExecutionError, spec::Instruction, Instructions};
+use crate::{execute::{Reg, RegLabel, Registers, Value16Bit, Memory, MemAddr}, print_info, norm_n, PreparationError, spec::Instruction, Instructions};
 
 /// Describes all variants of filesystem errors, for using in [ExecutionError]
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 #[allow(missing_docs)]
 pub enum FileError {
+    #[error("could not find file")]
     FileNotFound,
+    #[error("found non-recognized instruction")]
     InstrucNotRecognized,
+    #[error("error while reading in the file bytes")]
     ReadingError,
+    #[error("memory file is not properly written")]
     UnparsableMemory,
+    #[error("IO file is not properly written")]
     UnparsableIO,
+    #[error("registers' file is not properly written")]
     UnparsableRegister,
 }
-impl From<FileError> for ExecutionError {
+
+impl From<FileError> for PreparationError {
     fn from(value: FileError) -> Self {
         Self::File(value)
     }
@@ -69,7 +76,7 @@ pub fn read_instructions(filename: &impl AsRef<Path>) -> Result<Instructions, Fi
 /// 0 = "0x0005"
 /// ```
 /// To represent `KEY-STATUS` as 1 and `KEY-DATA` as 5
-pub fn read_io_once(filename: &impl AsRef<Path>) -> Result<HashMap<MemAddr, Value16Bit>, FileError> {
+pub fn read_io_once(filename: &impl AsRef<Path>) -> anyhow::Result<HashMap<MemAddr, Value16Bit>> {
     let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
     let mut contents = String::new();
     input_file.read_to_string(&mut contents).or(Err(FileError::ReadingError))?;
@@ -99,7 +106,7 @@ pub fn read_io_once(filename: &impl AsRef<Path>) -> Result<HashMap<MemAddr, Valu
 /// 0x0034 = "0x0000"
 /// 0x0036 = "0xFFF9"
 /// ```
-pub fn read_memory(filename: &impl AsRef<Path>) -> Result<Memory, FileError> {
+pub fn read_memory(filename: &impl AsRef<Path>) -> anyhow::Result<Memory> {
     let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
     let mut contents = String::new();
     input_file.read_to_string(&mut contents).or(Err(FileError::ReadingError))?;
@@ -126,14 +133,14 @@ pub fn read_memory(filename: &impl AsRef<Path>) -> Result<Memory, FileError> {
 /// 10
 /// 5
 ///```
-pub fn read_registers(filename: &impl AsRef<Path>) -> Result<Registers, FileError> {
+pub fn read_registers(filename: &impl AsRef<Path>) -> anyhow::Result<Registers> {
     let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
     let mut contents = String::new();
     input_file.read_to_string(&mut contents).or(Err(FileError::ReadingError))?;
 
     let mut registers = Registers::default();
     for (i, v) in contents.lines().enumerate() {
-        let Ok(v) = v.parse() else { return Err(FileError::UnparsableRegister) };
+        let Ok(v) = v.parse() else { return Err(FileError::UnparsableRegister)? };
         print_info(&format!("R{i} = {:X} (dec 0x{0})", v));
         registers[&RegLabel(i as u8)] = Reg(v);
     }

@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-#![warn(missing_docs)]
+//#![warn(missing_docs)]
 
 #![doc = include_str!("../README.md")]
 
@@ -8,12 +8,12 @@ use std::{num::ParseIntError, fmt::Display, collections::HashMap};
 type Instructions = HashMap<MemAddr, Instruction>;
 
 mod calc;
-mod execute;
+pub mod execute;
 mod parsing;
 mod spec;
 mod input;
 mod cli;
-mod preprocessor;
+pub mod preprocessor;
 
 pub use input::*;
 pub use execute::{Memory, IOSystem, Registers, ProgCounter, Processador};
@@ -23,27 +23,28 @@ use spec::execute::MemAddr;
 
 /// Main error enum for execution. Mostly seen at the start of execution.
 #[derive(Debug)]
-pub enum ExecutionError {
+pub enum PreparationError {
     /// Did not provide mandatory instruction file as an argument
     MissingInstructionsFile,
 
     /// Parsing related errors
     Parsing(ParseIntError),
 
+    // File related error
     File(FileError),
 }
 
-impl Display for ExecutionError {
+impl Display for PreparationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
-            ExecutionError::MissingInstructionsFile=>"no instructions file was provided".into(),
-            ExecutionError::Parsing(e)=>format!("encountered a parsing related error: {e}"),
-            ExecutionError::File(f) => format!("encountered a file related error: {f:?}"),
+            PreparationError::MissingInstructionsFile=>"no instructions file was provided".into(),
+            PreparationError::Parsing(e)=>format!("encountered a parsing related error: {e}"),
+            PreparationError::File(f) => format!("encountered a file related error: {f:?}"),
         })
     }
 }
 
-impl std::error::Error for ExecutionError {}
+impl std::error::Error for PreparationError {}
 
 pub(crate) fn norm_n(input: &str) -> Result<u16, ParseIntError> {
     let input = input.replace(",", "");

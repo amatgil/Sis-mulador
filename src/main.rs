@@ -2,22 +2,12 @@
 use std::{collections::HashMap, convert::Infallible};
 
 use clap::Parser;
-use sICmulador::*;
+use sICmulador::{*, preprocessor::{parse_file, Input}, execute::MemAddr};
 pub use sICmulador::CliArgs;
 
 
-fn main() -> Result<Infallible, ExecutionError> {
+fn main() -> anyhow::Result<Infallible> {
     let args = CliArgs::parse();
-
-    let instructions = read_instructions(&args.instruction_file)?;
-    let mem_name = args.memory_file;
-    let memory: Memory = match mem_name {
-        Some(f) => read_memory(&f)?,
-        None => {
-            print_info("No memory file provided, starting with empty memory");
-            Memory::new()
-        },
-    };
 
     let io_system = match args.io_file {
         Some(f) => read_io_once(&f)?,
@@ -27,7 +17,8 @@ fn main() -> Result<Infallible, ExecutionError> {
         },
     };
 
-    let init_pc: ProgCounter = ProgCounter(args.prog_counter.unwrap_or_default());
+    let init_pc: ProgCounter = ProgCounter(args.prog_counter);
+
     let registers = match args.reg_file {
         Some(f) => read_registers(&f)?,
         None => {
@@ -36,6 +27,7 @@ fn main() -> Result<Infallible, ExecutionError> {
         },
     };
 
+    let Input { mem: memory, instructions } = parse_file(&args.input_file, MemAddr(args.mem_init_addr), ProgCounter(args.prog_counter))?;
 
 
     let mut cpu = Processador::new(

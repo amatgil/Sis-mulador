@@ -236,6 +236,10 @@ impl From<i16> for MemAddr {
     }
 }
 
+impl MemAddr {
+    pub fn inc(&mut self) { self.0 += 2; }
+}
+
 impl ProgCounter {
     /// Advance the address incrementing by 2. The increment is by 2 because instructions are a word
     /// long, and so are stored at the even addresses only
