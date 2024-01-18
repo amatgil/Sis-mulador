@@ -36,12 +36,27 @@ pub struct Input {
 
 /// The requirements for the file are quite particular. They are:
 /// - The first line must be '.data', followed by a sequence of newline separated directives
-/// (listed below)
-/// - 
+///     - Type A: `.set LENGTH 8`, `.even`, `.space 10 FF`
+///     - Type B: `v: .byte 1 4 6 3 2 4 6 7 4 2 1`, `x: .word 6 4 2 2 5 6 7 4 31`
+/// - After the .data section comes the '.text' section, which contains the instructions
+/// - The last line must be `.end`. If there's content after it, it will not be lead
+///
+/// Note that comments work as usual with `;`.
 pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) -> anyhow::Result<Input> {
     let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
     let mut input = String::new();
     input_file.read_to_string(&mut input).context("could not read from file")?;
+
+    input = input.lines()
+        .filter(|line| !line.is_empty())
+        .map(|line| {
+            let mut line = line.trim().split(';');
+            let mut l = line.next().unwrap().to_string(); // SAFETY: We're removed empty lines, each line must contain
+                                                      // _something_
+            l.push_str("\n");
+            l
+        }).collect();
+    println!("Input is: {input}");
     
     let data_tag: IResult<&str, &str> = tag(".data")(&*input);
     let (input, _) = data_tag.map_err(|e| e.to_owned()).context("input does not start with '.data'")?;
@@ -56,7 +71,7 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
 
 
     let (memory, env, ptrs) = parse_directives(directives, mem_addr)?;
-    println!("{memory}"); dbg!(&env, &ptrs);
+    println!("Memory is: {memory}"); dbg!(&env, &ptrs);
     let instructions = parse_instructions(text_area, env, ptrs, instr_addr)?;
 
 
@@ -76,11 +91,11 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
     let mut env:   Aliases = HashMap::new();
     let mut ptrs: Pointers = HashMap::new();
 
-    for line in directives.lines().filter(|l| !l.is_empty()) {
+    for line in directives.lines() {
         let line = line.trim();
         eprintln!("Parsing directive: {line}");
         let mut parts = line.split(" ");
-        let command = parts.next().unwrap(); // SAFETY: We've filtered out empty lines
+        let command = parts.next().unwrap(); // SAFETY: We've filtered out empty lines earlier
         match command {
             ".set" => { env.insert(
                 parts.next().ok_or(ParsingError::MissingArgument { command: command.to_string() })?.into(),
@@ -139,6 +154,9 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
 }
 
 fn parse_instructions(text: &str, mut env: Aliases, mut ptrs: Pointers, mut pc: ProgCounter) -> anyhow::Result<Instructions> {
+    // THE PLAN:
+    // Do it in passes, changing things like `lo(v)` for their value n things. When it's all
+    // neat and tidy, run it by the function in `parsing.rs` :)
     let mut labels_addrs = HashMap::new();
     for line in text.lines() {
         let line = line.trim();
