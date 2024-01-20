@@ -226,7 +226,8 @@ struct NumInstruccions {
 
 impl From<ProgCounter> for MemAddr {
     fn from(value: ProgCounter) -> Self {
-        Self(norm_n(&format!("{:X}", value.0)).unwrap() as i16)
+        //Self(norm_n(&format!("{:X}", value.0)).unwrap() as i16)
+        Self(value.0 as i16)
     }
 }
 

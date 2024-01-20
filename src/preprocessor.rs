@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, mem};
 use std::fs::File;
 use std::io::Read;
 
@@ -72,7 +72,7 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
 
     let (memory, env, ptrs) = parse_directives(directives, mem_addr)?;
     println!("Memory is: {memory}"); dbg!(&env, &ptrs);
-    let instructions = parse_instructions(text_area, env, ptrs, instr_addr)?;
+    let instructions = parse_instructions(text_area, &env, ptrs, &instr_addr)?;
 
 
     Ok(Input {
@@ -91,7 +91,7 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
     let mut env:   Aliases = HashMap::new();
     let mut ptrs: Pointers = HashMap::new();
 
-    for line in directives.lines() {
+    for line in directives.lines().filter(|line| !line.is_empty()) {
         let line = line.trim();
         eprintln!("Parsing directive: {line}");
         let mut parts = line.split(" ");
@@ -153,20 +153,79 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
     ))
 }
 
-fn parse_instructions(text: &str, mut env: Aliases, mut ptrs: Pointers, mut pc: ProgCounter) -> anyhow::Result<Instructions> {
+// 'Aliases' are String -> String maps, like `SIZE := 7`; 'Pointers' are labels
+// This is INCREDIBLE inefficient, there's a lot of reallocation and copying and whatever, but it
+// doesn't really matter
+fn parse_instructions(text: &str, mut env: &Aliases, mut ptrs: Pointers, pc: &ProgCounter) -> anyhow::Result<Instructions> {
     // THE PLAN:
     // Do it in passes, changing things like `lo(v)` for their value n things. When it's all
     // neat and tidy, run it by the function in `parsing.rs` :)
-    let mut labels_addrs = HashMap::new();
-    for line in text.lines() {
+
+    // First pass: gather and remove all the etiquetes
+    // Second pass: change out lo(x), high(x) and labels for their values
+    //  - First check if it's a label. If it's not, check if it's an alias (labels take preference)
+    // Third parse: full parsing
+
+    dbg!(&ptrs);
+    let original_text = text.to_string();
+    let mut first_pc = pc.clone();
+
+    // First pass
+    for line in original_text.clone().lines().filter(|l| !l.is_empty()) {
         let line = line.trim();
         if let Some(colon_idx) = line.find(':') {
             let etiq = &line[0..colon_idx];
-            labels_addrs.insert(etiq.to_string(), pc.clone());
-            eprintln!("Line '{line}' has label '{etiq}' at addr {}", pc);
-            pc.advance();
+            ptrs.insert(etiq.to_string(), first_pc.clone().into());
+            eprintln!("Line '{line}' has label '{etiq}' at addr {}", first_pc);
+        } else {
+            first_pc.advance();
         }
     }
 
+    mem::drop(first_pc);
+    let mut labelless_text: Vec<String> = original_text.clone()
+        .lines()
+        .filter(|l| !l.is_empty())
+        .filter(|l| l.find(':').is_none())
+        .map(|l| l.to_string())
+        .collect();
+
+    for i in 0..labelless_text.len() {
+        labelless_text[i] = labelless_text[i]
+            .split(' ')
+            .map(|word| {
+                if word.len() < 3 { word.into() }
+                else if &word[0..3] == "lo(" { get_part_of_label(word, &ptrs, PartOfAddr::Lo) }
+                else if &word[0..3] == "hi(" { get_part_of_label(word, &ptrs, PartOfAddr::Hi) }
+                else { word.into() }
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+    }
+    dbg!(&ptrs);
+    dbg!(labelless_text);
+
+
     todo!()
 }
+
+enum PartOfAddr {
+    Lo,
+    Hi
+}
+
+fn get_part_of_label(word: &str, ptrs: &Pointers, part: PartOfAddr) -> String {
+    let label = word[3..word.len() - 1].to_string();
+    match part {
+        PartOfAddr::Lo => println!("Saw the low part of '{label}'"),
+        PartOfAddr::Hi => println!("Saw the hi part of '{label}'"),
+    }
+    let value = ptrs.get(&label).expect(&format!("Tried to use label '{label}', but it did not exist"));
+    dbg!(label, value);
+    let value: i16 = match part {
+        PartOfAddr::Lo => value.0 & 0x00FF,
+        PartOfAddr::Hi => (value.0 & 0xFF00u16 as i16) >> 8,
+    };
+    dbg!(format!("0x{:X}", value))
+}
+
