@@ -2,6 +2,7 @@ use std::{collections::HashMap, mem};
 use std::fs::File;
 use std::io::Read;
 
+use crate::{read_instructions, print_info};
 use crate::{ProgCounter, Memory, Instructions, FileError, execute::MemAddr};
 use nom::{IResult, bytes::complete::{tag, take_until}};
 use anyhow::Context;
@@ -61,7 +62,6 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
     let data_tag: IResult<&str, &str> = tag(".data")(&*input);
     let (input, _) = data_tag.map_err(|e| e.to_owned()).context("input does not start with '.data'")?;
     let directives: IResult<&str, &str> = take_until(".text")(input);
-    dbg!(&input, &directives);
     let (input, directives) = directives.map_err(|e| e.to_owned()).context("could not parse the directives")?;
 
     let text_tag: IResult<&str, &str> = tag(".text")(input);
@@ -71,7 +71,10 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
 
 
     let (memory, env, ptrs) = parse_directives(directives, mem_addr)?;
-    println!("Memory is: {memory}"); dbg!(&env, &ptrs);
+    println!("Preprocessed memory is:");
+    println!("-----------------------\n");
+    println!("{memory}");
+    println!("-----------------------\n");
     let instructions = parse_instructions(text_area, &env, ptrs, &instr_addr)?;
 
 
@@ -93,7 +96,7 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
 
     for line in directives.lines().filter(|line| !line.is_empty()) {
         let line = line.trim();
-        eprintln!("Parsing directive: {line}");
+        print_info(&format!("Parsing directive: {line}"));
         let mut parts = line.split(" ");
         let command = parts.next().unwrap(); // SAFETY: We've filtered out empty lines earlier
         match command {
@@ -166,7 +169,6 @@ fn parse_instructions(text: &str, env: &Aliases, mut ptrs: Pointers, pc: &ProgCo
     //  - First check if it's a label. If it's not, check if it's an alias (labels take preference)
     // Third parse: full parsing
 
-    dbg!(&ptrs);
     let original_text = text.to_string();
     let mut first_pc = pc.clone();
 
@@ -176,7 +178,7 @@ fn parse_instructions(text: &str, env: &Aliases, mut ptrs: Pointers, pc: &ProgCo
         if let Some(colon_idx) = line.find(':') {
             let etiq = &line[0..colon_idx];
             ptrs.insert(etiq.to_string(), first_pc.clone().into());
-            eprintln!("Line '{line}' has label '{etiq}' at addr {}", first_pc);
+            print_info(&format!("PARSING: Line '{line}' has label '{etiq}' at addr {}", first_pc));
         } else {
             first_pc.advance();
         }
@@ -206,7 +208,6 @@ fn parse_instructions(text: &str, env: &Aliases, mut ptrs: Pointers, pc: &ProgCo
             .map(|word| { // The labels thing (requires MATH!! WATCH OUT!!!11!!!!111!!)
                 if let Some(target_addr) = ptrs.get(&word) {
                     let curr_addr = pc.0 + (i as u16)*2;
-                    dbg!(target_addr, curr_addr);
                     let delta = (target_addr.0 - curr_addr as i16) / 2 - 1; // Minus 2 because BZ
                                                                             // adds to PC + 2
                     format!("0x{:X}", delta)
@@ -215,12 +216,13 @@ fn parse_instructions(text: &str, env: &Aliases, mut ptrs: Pointers, pc: &ProgCo
             .collect::<Vec<_>>()
             .join(" ");
     }
-    dbg!(&ptrs);
-    dbg!(&labelless_text);
+    let processed_text: String = labelless_text.join("\n");
 
-
-
-    todo!()
+    println!("Preprocessed text is:");
+    println!("-----------------------\n");
+    println!("{processed_text}");
+    println!("-----------------------\n");
+    read_instructions(&processed_text)
 }
 
 enum PartOfAddr {
@@ -230,16 +232,11 @@ enum PartOfAddr {
 
 fn get_part_of_label(word: &str, ptrs: &Pointers, part: PartOfAddr) -> String {
     let label = word[3..word.len() - 1].to_string();
-    match part {
-        PartOfAddr::Lo => println!("Saw the low part of '{label}'"),
-        PartOfAddr::Hi => println!("Saw the hi part of '{label}'"),
-    }
     let value = ptrs.get(&label).expect(&format!("Tried to use label '{label}', but it did not exist"));
-    dbg!(label, value);
     let value: i16 = match part {
         PartOfAddr::Lo => value.0 & 0x00FF,
         PartOfAddr::Hi => (value.0 & 0xFF00u16 as i16) >> 8,
     };
-    dbg!(format!("0x{:X}", value))
+    format!("0x{:X}", value)
 }
 
