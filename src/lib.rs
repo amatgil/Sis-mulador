@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-//#![warn(missing_docs)]
+#![warn(missing_docs)]
 
 #![doc = include_str!("../README.md")]
 
@@ -8,11 +8,15 @@ use std::{num::ParseIntError, fmt::Display, collections::HashMap};
 type Instructions = HashMap<MemAddr, Instruction>;
 
 mod calc;
-pub mod execute;
+mod execute;
 mod parsing;
 mod spec;
 mod input;
 mod cli;
+/// Holds all functions and types relating to the process from when the file is read from disk
+/// until when it is turned into proper instructions. It deals with labels, functions like `lo()`
+/// and `hi()`, keeping track of the address of each value, setting up the .data values properly in
+/// their appropriate positions in memory and the like.
 pub mod preprocessor;
 
 pub use input::*;
@@ -30,7 +34,7 @@ pub enum PreparationError {
     /// Parsing related errors
     Parsing(ParseIntError),
 
-    // File related error
+    /// File related error
     File(FileError),
 }
 

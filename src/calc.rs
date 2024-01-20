@@ -19,6 +19,8 @@ impl Sub for Reg {
 }
 
 impl Reg {
+    /// Arithmetic shift. Positive means leftwards (multiplying), negative means rightwards
+    /// (dividing). Only the last five bits are examined, the fifth being the weighted sign bit.
     pub fn sha(self, rhs: Self) -> Self {
         let lsbs = rhs.0 & 0b01111;
         let sign = rhs.0 & 0b10000;
@@ -35,6 +37,7 @@ impl Reg {
         Reg(n | mask)
     }
 }
+
 impl Shl for Reg {
     type Output = Self;
 

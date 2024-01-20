@@ -8,7 +8,6 @@ use crate::{print_info, norm_n, Instructions};
 use crate::parsing::ParseError;
 use crate::spec::Instruction;
 
-const DEFAULT_MEMORY_WORD: i16 = 0x0000;
 const INSTRUCTS_SLOW: [&str; 4] = ["LD", "LDB", "ST", "STB"];
 
 impl Processador {
@@ -232,9 +231,11 @@ impl From<ProgCounter> for MemAddr {
 }
 
 impl From<i16> for MemAddr {
-    fn from(value: i16) -> Self {
-        Self(value)
-    }
+    fn from(value: i16) -> Self { Self(value) }
+}
+
+impl From<u16> for ProgCounter {
+    fn from(value: u16) -> Self { Self(value) }
 }
 
 impl MemAddr {

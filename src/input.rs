@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path, fs::File, io::Read};
 
 use toml::Table;
 
-use crate::{execute::{Reg, RegLabel, Registers, Value16Bit, Memory, MemAddr}, print_info, norm_n, PreparationError, spec::Instruction, Instructions};
+use crate::{execute::{Reg, RegLabel, Registers, Value16Bit, MemAddr}, print_info, norm_n, PreparationError, spec::Instruction, Instructions};
 
 /// Describes all variants of filesystem errors, for using in [ExecutionError]
 #[derive(Debug, thiserror::Error)]
@@ -28,6 +28,8 @@ impl From<FileError> for PreparationError {
     }
 }
 
+/// Get a previous preprocessed file and turn it into a usable ordered instruction set to be
+/// simulated
 pub fn read_instructions(input: &str) -> anyhow::Result<Instructions> {
     let instructions = 
         input.lines().enumerate()

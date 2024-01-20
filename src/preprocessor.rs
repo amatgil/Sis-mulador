@@ -16,7 +16,8 @@ enum ParsingError {
         command: String
     },
     #[error("command not recognized: {command}")]
-    UnrecognizedCommand {
+    _UnrecognizedCommand { // Unused because if the command isn't recognized it's assumed to be a
+                           // label lmao, check the below errors for more details
         command: String
     },
     #[error("command not recognized after label '{label}': {command}")]
@@ -30,8 +31,12 @@ enum ParsingError {
     },
 }
 
+/// The struct returned by parse_file, it contains the memory and instructions specified in the
+/// .data and .text section of the file respectively.
 pub struct Input {
+    /// The memory, as specified by the .data section
     pub mem: Memory,
+    /// The instructions, as specified by the .text section
     pub instructions: Instructions
 }
 
@@ -53,7 +58,7 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
         .map(|line| {
             let mut line = line.trim().split(';');
             let mut l = line.next().unwrap().to_string(); // SAFETY: We're removed empty lines, each line must contain
-                                                      // _something_
+                                                          // _something_
             l.push_str("\n");
             l
         }).collect();

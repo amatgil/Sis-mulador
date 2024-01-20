@@ -2,7 +2,7 @@
 use std::{collections::HashMap, convert::Infallible};
 
 use clap::Parser;
-use sICmulador::{*, preprocessor::{parse_file, Input}, execute::MemAddr};
+use sICmulador::{*, preprocessor::{parse_file, Input}};
 pub use sICmulador::CliArgs;
 
 
@@ -27,7 +27,7 @@ fn main() -> anyhow::Result<Infallible> {
         },
     };
 
-    let Input { mem: memory, instructions } = parse_file(&args.input_file, MemAddr(args.mem_init_addr), ProgCounter(args.prog_counter))?;
+    let Input { mem: memory, instructions } = parse_file(&args.input_file, args.mem_init_addr.into(), args.prog_counter.into())?;
 
 
     let mut cpu = Processador::new(

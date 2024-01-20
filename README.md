@@ -5,23 +5,16 @@ The code is incredibly self documenting (on purpose). Usage is below.
 (the ergonomics aren't the best, but it works Well Enough)
 
 ## Example usage
-To solve the alien that I had for 13c (which gave instuctions and initial memory, with an initial
-PC of 0 and no initial register state), use:
+To solve the alien that I had for Tema 14 
 ```rs
-cargo run -- examples/alien/alien.sisa -m examples/alien/alien.smem -i examples/alien/alien.sio
+cargo run -- examples/complete/first_example.sisa
 ```
 
-For the `mul16` algorithm:
-```rs
-cargo run -- examples/mul16/mul16.sisa -r examples/mul16/mul16.sregs
-```
+You may also specify some initial values for the registers and IO:
 
-Or for the `mulfast` algorithm:
 ```rs
-cargo run -- examples/mulfast/mulfast.sisa -r examples/mulfast/mulfast.sregs
+cargo run -- [code file] -r [registers file] -i [io file]
 ```
-
-Both multiplication algorithms will multiply 5 times 10, giving `0x32` on `R5`.
 
 
 ## IO
@@ -44,14 +37,14 @@ File must contain eight lines (or less, for a computer with less registers), eac
 
 Register `6` will hold `0x0005` and Register `7` will hold `0x0011`.
 
-You cannot use more than eight registers, it will panic (this is intended behavior).
+You cannot use more than eight registers, it will abort (this is intended behavior).
 
 ## NOTE
 It assumes the input is wellformed. Do not feed it instuctions like
 
 `MOVI R5, 0x555`
 
-because it's invalid. If you feed it invalid input, you're gonna get UB (good luck lmao).
+because that is invalid. If you feed it invalid input, you're gonna get UB (good luck lmao).
 
 Also, the memory and data memories are separate because I didn't stop to think before I started 
 writing down code. Just, like, assume they're the same. I'm protecting you from yourself (this actually
@@ -62,7 +55,7 @@ has already helped me).
 
 
 # Notice
-- Don't `.set` words like verbs, register names or labels. That's UB
+- Don't `.set` words like verbs, register names or labels. That's UB.
 - Don't mismatch parens. That's UB, though I try to catch them
-- Jumps are always relative, so JALR may behave unexpectedly. Careful
+- Jumps are always relative, so JALR may behave... unexpectedly (wrong). Careful!
 - Don't try to make jumps too large. There's a check for this but it's untested

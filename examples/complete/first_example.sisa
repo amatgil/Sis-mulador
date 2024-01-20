@@ -1,0 +1,25 @@
+.data
+	v: .word 12 99 4 39 102 0 1 2 23 63
+	max: .word 0 ; some comment here
+.text
+	MOVI R0, lo(v)
+	MOVHI R0, hi(v) 
+	LD R1, 0(R0)
+	MOVI R7, 2
+	MOVI R5, 20
+while:
+	CMPLT R4, R7, R5
+	BZ R4, fi_while
+	ADD R3, R7, R0
+	LD R2, 0(R3)
+	CMPLTU R4, R1, R2
+	BZ R4, fi_if
+	ADDI R1, R2, 0
+fi_if:
+	ADDI R7, R7, 2
+	BNZ R7, while
+fi_while:
+	MOVI R3, lo(max)
+	MOVHI R3, hi(max)
+	ST 0(R3), R1
+.end
