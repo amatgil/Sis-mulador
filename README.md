@@ -57,7 +57,12 @@ Also, the memory and data memories are separate because I didn't stop to think b
 writing down code. Just, like, assume they're the same. I'm protecting you from yourself (this actually
 has already helped me).
 
-## Roadmap
-- Add a preprocessor for directives, labels, etc.
+## Ideas
 - Use `as` more (note the sign extension remarks when upcasting): https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
-- Implement `JALR` when we know more about it
+
+
+# Notice
+- Don't `.set` words like verbs, register names or labels. That's UB
+- Don't mismatch parens. That's UB, though I try to catch them
+- Jumps are always relative, so JALR may behave unexpectedly. Careful
+- Don't try to make jumps too large. There's a check for this but it's untested

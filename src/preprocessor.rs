@@ -156,7 +156,7 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
 // 'Aliases' are String -> String maps, like `SIZE := 7`; 'Pointers' are labels
 // This is INCREDIBLE inefficient, there's a lot of reallocation and copying and whatever, but it
 // doesn't really matter
-fn parse_instructions(text: &str, mut env: &Aliases, mut ptrs: Pointers, pc: &ProgCounter) -> anyhow::Result<Instructions> {
+fn parse_instructions(text: &str, env: &Aliases, mut ptrs: Pointers, pc: &ProgCounter) -> anyhow::Result<Instructions> {
     // THE PLAN:
     // Do it in passes, changing things like `lo(v)` for their value n things. When it's all
     // neat and tidy, run it by the function in `parsing.rs` :)
@@ -193,17 +193,31 @@ fn parse_instructions(text: &str, mut env: &Aliases, mut ptrs: Pointers, pc: &Pr
     for i in 0..labelless_text.len() {
         labelless_text[i] = labelless_text[i]
             .split(' ')
-            .map(|word| {
+            .map(|word| { // Get lo() and hi()
                 if word.len() < 3 { word.into() }
                 else if &word[0..3] == "lo(" { get_part_of_label(word, &ptrs, PartOfAddr::Lo) }
                 else if &word[0..3] == "hi(" { get_part_of_label(word, &ptrs, PartOfAddr::Hi) }
                 else { word.into() }
             })
+            .map(|word| { // The aliases
+                if let Some(aliased) = env.get(&word) { aliased.clone() } 
+                else { word }
+            })
+            .map(|word| { // The labels thing (requires MATH!! WATCH OUT!!!11!!!!111!!)
+                if let Some(target_addr) = ptrs.get(&word) {
+                    let curr_addr = pc.0 + (i as u16)*2;
+                    dbg!(target_addr, curr_addr);
+                    let delta = (target_addr.0 - curr_addr as i16) / 2 - 1; // Minus 2 because BZ
+                                                                            // adds to PC + 2
+                    format!("0x{:X}", delta)
+                } else { word }
+            })
             .collect::<Vec<_>>()
             .join(" ");
     }
     dbg!(&ptrs);
-    dbg!(labelless_text);
+    dbg!(&labelless_text);
+
 
 
     todo!()
