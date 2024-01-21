@@ -72,7 +72,7 @@ pub fn parse_complete_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCo
     let text_tag: IResult<&str, &str> = tag(".text")(input);
     let (input, _) = text_tag.map_err(|e| e.to_owned()).context("input does not start with '.data'")?;
     let text_area: IResult<&str, &str> = take_until(".end")(input);
-    let (_input, text_area) = text_area.map_err(|e| e.to_owned()).context("could not parse the data section")?;
+    let (_input, text_area) = text_area.map_err(|e| e.to_owned()).context("could not parse the data section, .end may be missing")?;
 
 
     let (memory, env, ptrs) = parse_directives(directives, mem_addr)?;

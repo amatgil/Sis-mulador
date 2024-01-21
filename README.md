@@ -52,15 +52,20 @@ You cannot use more than eight registers, it will abort (this is intended behavi
 
 
 # Notes
+- .text and .data are not followed by `:`, only labels are
 - Don't `.set` words like verbs, register names or labels. That's UB.
 - Don't mismatch parens. That's UB, though I try to catch them
 - Jumps are always relative, so JALR may behave... unexpectedly (wrong). Careful!
 - Don't try to make jumps too large. There's a check for this but it's untested
-- Don't feed it malformed input like `MOVI R5, 0x555`.If you feed it invalid input, you're gonna get UB (good luck lmao), though I do
-try to catch them when I can.
+- Don't feed it malformed input like `MOVI R5, 0x555`.If you feed it invalid input, you're gonna get UB (good luck 
+    lmao), though I do try to catch them when I can.
 - The memory and data memories are separate because I didn't stop to think before I started 
-writing down code. Just, like, assume they're the same. I'm protecting you from yourself (this actually
-has already helped me from programmer error lmao).
+    writing down code. Just, like, assume they're the same. I'm protecting you from yourself (this actually
+    has already helped me from programmer error lmao).
+- The LD/ST instructions have offsets in their command: these are always in number of bytes,
+    not words (changing it would be easy, the source code is actually very readable and intuitive).
+- If the program were to not halt, the output would grow VERY large, so there's a built in check: if the number of
+    instructions ran exceeds 10000 (`MAX_INSTRUCTION_RUN_SIZE`), it halts execution.
 
 # License
 Licensed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) (see COPYING file for full text).

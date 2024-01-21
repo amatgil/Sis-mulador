@@ -46,7 +46,17 @@ fn main() -> anyhow::Result<Infallible> {
     print_info("\n\nStarting with state:");
     println!("{cpu}");
 
+    let mut instructions_executed = 0;
+
     print_info("Starting execution...");
-    loop { cpu.execute_next(true); }
+    loop {
+        cpu.execute_next(true);
+        instructions_executed += 1;
+        if instructions_executed >= Processador::MAX_INSTRUCTION_RUN_SIZE {
+            println!("{} insturctions have been executed, so it seems like the program is non-halting. For the \
+                     sake of your terminal and your hard-drive, execution has been stoped", Processador::MAX_INSTRUCTION_RUN_SIZE);
+            std::process::exit(0);
+        }
+    }
 }
 

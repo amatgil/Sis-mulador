@@ -1,0 +1,16 @@
+.data
+	.set N 5
+	v: .word 10 20 4 6 3
+.text
+	MOVI R7, lo(v)
+	MOVHI R7, hi(v)   ; Current pointer
+	ADDI R6, R7, N
+	ADDI R6, R6, N    ; R6 = R7 + 2*N (last pointer)
+	MOVI R1, 0        ; Total so far
+for:
+	LD R3, 0(R7)
+	ADD R1, R1, R3
+	ADDI R7, R7, 2
+	CMPEQ R5, R6, R7  ; If we're not at the end, continue back to 'for'
+	BZ R5, for
+.end

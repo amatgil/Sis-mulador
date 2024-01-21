@@ -1,0 +1,10 @@
+.data
+	v: .word 50 60 
+.text
+	MOVI R0, lo(v)
+	MOVHI R0, hi(v) 
+	LD R1, 0(R0)
+	LD R2, 2(R0)
+	ADD R3, R1, R2
+	OUT 1, R3
+.end

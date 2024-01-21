@@ -1,0 +1,5 @@
+.data
+.text
+	MOVI R0, 0x1
+	BNZ R0, -2
+.end

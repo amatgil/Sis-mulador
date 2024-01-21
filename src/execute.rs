@@ -11,6 +11,10 @@ use crate::spec::Instruction;
 const INSTRUCTS_SLOW: [&str; 4] = ["LD", "LDB", "ST", "STB"];
 
 impl Processador {
+    /// Maximum allowed number of instructions to be run, to avoid generating infinite output wrt
+    /// non-halting programs
+    pub const MAX_INSTRUCTION_RUN_SIZE: usize = 10000;
+
     /// Create a new Processador given a starting state
     pub fn new(
         init_regs: Registers,
@@ -88,13 +92,13 @@ impl Processador {
             Some(i) => i.clone(),
             None => {
                 println!("The number of instructions done is: {:?}", self.instrs_fetes);
-                println!("There was no instruction to read when the PC = {} (dec '{}'). Instead of devolving into gibberish, the simulation has shut down 'gracefully' (for some definition of 'gracefully')",
+                println!("There was no instruction to read when the PC = {} (dec '{}'), so the simulation has shut down 'gracefully' (for some definition of 'gracefully')",
                 self.pc, self.pc.0);
                 std::process::exit(0);
             },
         };
-        self.execute_raw(&inst);
         self.pc.advance();
+        self.execute_raw(&inst);
         if print_status { println!("{self}"); }
     }
     /// Update the IO's ports. Pretty much unusable as it must be hard-coded in
