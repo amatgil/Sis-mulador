@@ -106,7 +106,7 @@ pub struct Registers([Reg; 8]);
 
 /// The held memory that is contained in the [Processador]'s MEMORY module, stored as bytes (not
 /// words). 
-#[derive(Debug, Clone)] 
+#[derive(Debug, Clone, Default)] 
 pub struct Memory(HashMap<MemAddr, MemValue>);
 
 impl Memory {
@@ -131,7 +131,7 @@ impl Memory {
     }
     /// Get stored byte from the given memory address
     pub fn get_byte(&self, addr: &MemAddr) -> Option<i8> {
-        self.0.get(addr).and_then(|m| Some(m.0))
+        self.0.get(addr).map(|m| m.0)
     }
     /// Get stored word from the given memory address. See the note about alignment at
     /// [insert_word](Memory::insert_word)
@@ -149,10 +149,8 @@ impl MemAddr {
     /// Returns new address, but aligned instead. Does not require mutable access and instead
     /// returns the new value for better ergonomics when dealing with immutable addrs.
     fn align(&self) -> Self {
-        //let addr = MemAddr(self.0 - (self.0 % 2));
-        let addr = MemAddr(self.0 & !1);
-
-        addr
+        //MemAddr(self.0 - (self.0 % 2)) // Equivalent but slower
+        MemAddr(self.0 & !1)
     }
 }
 

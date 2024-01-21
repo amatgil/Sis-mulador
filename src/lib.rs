@@ -51,10 +51,10 @@ impl Display for PreparationError {
 impl std::error::Error for PreparationError {}
 
 pub(crate) fn norm_n(input: &str) -> Result<u16, ParseIntError> {
-    let input = input.replace(",", "");
+    let input = input.replace(',', "");
     if input.len() <= 2 || &input[..2] != "0x" { // Is dec here
-        if input.chars().next().unwrap() == '-' {
-            Ok(-((input[1..].parse::<u16>()?) as i16) as u16)
+        if let Some(val) = input.strip_prefix('-') {
+            Ok(-((val.parse::<u16>()?) as i16) as u16)
         } else { input.parse() }
     } else {
         u16::from_str_radix(&input[2..], 16)

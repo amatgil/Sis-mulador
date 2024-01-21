@@ -107,8 +107,8 @@ impl TryFrom<&str> for Instruction {
     type Error = ParseError;
 
     fn try_from(value: &str) -> Result<Self, ParseError> {
-        let value = value.replace("(", " ");
-        let mut parts = value.split(" ");
+        let value = value.replace('(', " ");
+        let mut parts = value.split(' ');
         let verb = parts.next().ok_or(ParseError::MissingVerb)?;
         //print_info(&format!("Verb parsed is: {verb}"));
 
@@ -127,10 +127,10 @@ impl TryFrom<&str> for RegLabel {
     type Error = RegLabelError;
 
     fn try_from(input: &str) -> Result<Self, Self::Error> {
-        let mut char = input.bytes().nth(1).ok_or(RegLabelError::MissingNumber)?;
-        if char == b'(' {char = input.bytes().nth(2).ok_or(RegLabelError::MissingNumber)?;}
+        let mut char = input.as_bytes().get(1).copied().ok_or(RegLabelError::MissingNumber)?;
+        if char == b'(' {char = input.as_bytes().get(2).copied().ok_or(RegLabelError::MissingNumber)?;}
         let n = if char.is_ascii_alphanumeric() {
-            char - '0' as u8
+            char - b'0'
         } else {
             return Err(RegLabelError::UnrecognizedNumber);
         };

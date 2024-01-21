@@ -59,12 +59,12 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
             let mut line = line.trim().split(';');
             let mut l = line.next().unwrap().to_string(); // SAFETY: We're removed empty lines, each line must contain
                                                           // _something_
-            l.push_str("\n");
+            l.push('\n');
             l
         }).collect();
     println!("Input is: {input}");
     
-    let data_tag: IResult<&str, &str> = tag(".data")(&*input);
+    let data_tag: IResult<&str, &str> = tag(".data")(&input);
     let (input, _) = data_tag.map_err(|e| e.to_owned()).context("input does not start with '.data'")?;
     let directives: IResult<&str, &str> = take_until(".text")(input);
     let (input, directives) = directives.map_err(|e| e.to_owned()).context("could not parse the directives")?;
@@ -102,7 +102,7 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
     for line in directives.lines().filter(|line| !line.is_empty()) {
         let line = line.trim();
         print_info(&format!("Parsing directive: {line}"));
-        let mut parts = line.split(" ");
+        let mut parts = line.split(' ');
         let command = parts.next().unwrap(); // SAFETY: We've filtered out empty lines earlier
         match command {
             ".set" => { env.insert(
@@ -132,7 +132,7 @@ fn parse_directives(directives: &str, mut mem_addr: MemAddr) -> anyhow::Result<(
                 match command {
                     ".byte" => {
                         ptrs.insert(etiq.into(), mem_addr.clone());
-                        let bytes: Vec<_> = line.split(" ").map(|b| b.parse::<i8>()).collect();
+                        let bytes: Vec<_> = line.split(' ').map(|b| b.parse::<i8>()).collect();
                         for byte in bytes {
                             let byte = byte?;
                             memory.insert_byte(&mem_addr, byte);
@@ -197,8 +197,8 @@ fn parse_instructions(text: &str, env: &Aliases, mut ptrs: Pointers, pc: &ProgCo
         .map(|l| l.to_string())
         .collect();
 
-    for i in 0..labelless_text.len() {
-        labelless_text[i] = labelless_text[i]
+    for (i, line) in labelless_text.iter_mut().enumerate() {
+        *line = line
             .split(' ')
             .map(|word| { // Get lo() and hi()
                 if word.len() < 3 { word.into() }
