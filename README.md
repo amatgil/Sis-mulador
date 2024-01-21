@@ -51,7 +51,7 @@ You cannot use more than eight registers, it will abort (this is intended behavi
 - Use `as` more (note the sign extension remarks when upcasting): https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
 
 
-# Note
+# Notes
 - Don't `.set` words like verbs, register names or labels. That's UB.
 - Don't mismatch parens. That's UB, though I try to catch them
 - Jumps are always relative, so JALR may behave... unexpectedly (wrong). Careful!
@@ -61,3 +61,6 @@ try to catch them when I can.
 - The memory and data memories are separate because I didn't stop to think before I started 
 writing down code. Just, like, assume they're the same. I'm protecting you from yourself (this actually
 has already helped me from programmer error lmao).
+
+# License
+Licensed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) (see COPYING file for full text).
