@@ -2,7 +2,7 @@
 use std::{collections::HashMap, convert::Infallible};
 
 use clap::Parser;
-use sICmulador::{*, preprocessor::{parse_file, Input}};
+use sICmulador::{*, preprocessor::{Input, parse_complete_file}};
 pub use sICmulador::CliArgs;
 
 
@@ -16,9 +16,7 @@ fn main() -> anyhow::Result<Infallible> {
             HashMap::new()
         },
     };
-
     let init_pc: ProgCounter = ProgCounter(args.prog_counter);
-
     let registers = match args.reg_file {
         Some(f) => read_registers(&f)?,
         None => {
@@ -27,16 +25,24 @@ fn main() -> anyhow::Result<Infallible> {
         },
     };
 
-    let Input { mem: memory, instructions } = parse_file(&args.input_file, args.mem_init_addr.into(), args.prog_counter.into())?;
+    let mut cpu = if args.simple {
+        let instructions = read_simple_instructions_file(&args.input_file)?;
+        let memory = if let Some(mem_file) = args.memory_file { read_memory(&mem_file)? }
+            else { Memory::default() };
 
+        Processador::new( registers, memory, init_pc, instructions, io_system)
 
-    let mut cpu = Processador::new(
-        registers,
-        memory,
-        init_pc,
-        instructions,
-        io_system,
-    );
+    } else {
+        if args.memory_file.is_some() { 
+            eprintln!("Initial memory file was provided, but no --simple flag: aborting");
+            std::process::exit(1);
+        }
+        let Input { mem: memory, instructions } = parse_complete_file(&args.input_file, args.mem_init_addr.into(), args.prog_counter.into())?;
+
+        Processador::new( registers, memory, init_pc, instructions, io_system)
+
+    };
+
     print_info("\n\nStarting with state:");
     println!("{cpu}");
 

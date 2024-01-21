@@ -48,7 +48,7 @@ pub struct Input {
 /// - The last line must be `.end`. If there's content after it, it will not be lead
 ///
 /// Note that comments work as usual with `;`.
-pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) -> anyhow::Result<Input> {
+pub fn parse_complete_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) -> anyhow::Result<Input> {
     let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
     let mut input = String::new();
     input_file.read_to_string(&mut input).context("could not read from file")?;
@@ -65,7 +65,7 @@ pub fn parse_file(filename: &str, mem_addr: MemAddr, instr_addr: ProgCounter) ->
     println!("Input is: {input}");
     
     let data_tag: IResult<&str, &str> = tag(".data")(&input);
-    let (input, _) = data_tag.map_err(|e| e.to_owned()).context("input does not start with '.data'")?;
+    let (input, _) = data_tag.map_err(|e| e.to_owned()).context("input does not start with '.data': did you forget to use `--simple`?")?;
     let directives: IResult<&str, &str> = take_until(".text")(input);
     let (input, directives) = directives.map_err(|e| e.to_owned()).context("could not parse the directives")?;
 

@@ -18,6 +18,7 @@ macro_rules! generate_parse_match {
                 d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?
             },
+            // The rest, normal ones
             "ADDI" => Instruction::ADDI {
                 d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                 a: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
@@ -67,6 +68,7 @@ macro_rules! generate_parse_match {
                     d: $parts.next().ok_or(ParseError::MissingReg)?.try_into()?,
                     n: $parts.next().ok_or(ParseError::MissingImmediate)?.try_into()?,
             },
+            // My precious lil baby
             "NOP" =>  Instruction::NOP,
 
             x => return Err(ParseError::UnrecognizedInstruction(x.into()))
