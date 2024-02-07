@@ -75,7 +75,7 @@ impl Processador {
             Instruction::BNZ { a, offset }    => if self.regs[a].0 != 0 {self.pc.0 = (self.pc.0 as i16 + 2*se_8(offset.0)) as u16 }
             Instruction::MOVI { d, n }        => self.regs[d].0 = se_8(n.0),
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= (n.0 as i16) << 8,
-            Instruction::IN { d, n }          => self.regs[d].0 = self.io.get(n).expect("Tried to access non existant IO address").0,
+            Instruction::IN { d, n }          => self.regs[d].0 = self.io.get(n).expect("Tried to access non existent IO address").0,
             Instruction::OUT { d, n }         => println!("[OUTPUT]: value '0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[n].0, d),
             Instruction::JALR { a, d }        => { self.regs[d].0 = self.pc.0 as i16;   self.pc.0 = self.regs[a].0 as u16; }, // TODO: Test
             Instruction::NOP                  => {},
