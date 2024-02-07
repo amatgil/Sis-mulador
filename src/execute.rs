@@ -93,7 +93,7 @@ impl Processador {
             None => {
                 println!("The number of instructions done is: {:?}", self.instrs_fetes);
                 println!("There was no instruction to read when the PC = {} (dec '{}'), so the simulation has shut down 'gracefully' (for some definition of 'gracefully')",
-                self.pc, self.pc.0);
+                    self.pc, self.pc.0);
                 std::process::exit(0);
             },
         };
@@ -101,7 +101,8 @@ impl Processador {
         self.execute_raw(&inst);
         if print_status { println!("{self}"); }
     }
-    /// Update the IO's ports. Pretty much unusable as it must be hard-coded in
+    /// Update the IO's ports. Pretty much unusable as it must be hard-coded in, but I can't really
+    /// think of an alternative that's useful
     pub fn update_io(&mut self, new_io: HashMap<MemAddr, Value16Bit>) { self.io = IOSystem(new_io); }
 }
 
