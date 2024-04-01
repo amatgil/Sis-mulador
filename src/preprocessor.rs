@@ -2,7 +2,7 @@ use std::{collections::HashMap, mem};
 use std::fs::File;
 use std::io::Read;
 
-use crate::{read_instructions, print_info};
+use crate::{print_info, parse_instructions_from_str};
 use crate::{ProgCounter, Memory, Instructions, FileError, execute::MemAddr};
 use nom::{IResult, bytes::complete::{tag, take_until}};
 use anyhow::Context;
@@ -227,7 +227,7 @@ fn parse_instructions(text: &str, env: &Aliases, mut ptrs: Pointers, pc: &ProgCo
     println!("-----------------------\n");
     println!("{processed_text}");
     println!("-----------------------\n");
-    read_instructions(&processed_text)
+    parse_instructions_from_str(processed_text)
 }
 
 enum PartOfAddr {

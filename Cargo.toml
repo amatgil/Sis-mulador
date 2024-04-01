@@ -1,6 +1,6 @@
 [package]
 name = "sICmulador"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -8,10 +8,13 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.79"
-clap = { version = "4.4.11", features = ["derive"] }
 nom = "7.1.3"
 thiserror = "1.0.56"
 toml = "0.8.8"
+wasm-bindgen = "0.2.92"
+
+[lib]
+crate-type = ["cdylib"]
 
 [profile.release]
 strip = true  # Automatically strip symbols from the binary.

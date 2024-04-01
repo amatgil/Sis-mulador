@@ -1,12 +1,11 @@
+set dotenv-load
+
 make-docs:
 	cargo doc --no-deps
 
+web:
+	wasm-pack build --target web
 
-pkg:
-	rm -rf pkg/
-	cargo build --release
-	just make-docs
-	mkdir -p pkg/
-	cp ./target/release/sICmulador pkg/
-	cp -r ./examples pkg/
-	cp -r ./target/doc/ pkg/ # Add docs, TODO: Make proper
+trans:
+	just web
+	cp -r pkg/ $DEST

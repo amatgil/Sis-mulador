@@ -12,7 +12,6 @@ mod execute;
 mod parsing;
 mod spec;
 mod input;
-mod cli;
 /// Holds all functions and types relating to the process from when the file is read from disk
 /// until when it is turned into proper instructions. It deals with labels, functions like `lo()`
 /// and `hi()`, keeping track of the address of each value, setting up the .data values properly in
@@ -22,7 +21,6 @@ pub mod preprocessor;
 pub use input::*;
 pub use execute::{Memory, IOSystem, Registers, ProgCounter, Processador};
 pub use spec::Instruction;
-pub use cli::CliArgs;
 use spec::execute::MemAddr;
 
 /// Main error enum for execution. Mostly seen at the start of execution.

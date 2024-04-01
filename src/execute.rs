@@ -4,37 +4,58 @@ use::std::{
     ops::{Index, IndexMut}, mem::transmute,
 };
 
-use crate::{print_info, norm_n, Instructions};
+use crate::{print_info, norm_n, Instructions, input};
 use crate::parsing::ParseError;
 use crate::spec::Instruction;
+use wasm_bindgen::prelude::*;
 
 const INSTRUCTS_SLOW: [&str; 4] = ["LD", "LDB", "ST", "STB"];
 
+#[wasm_bindgen]
 impl Processador {
     /// Maximum allowed number of instructions to be run, to avoid generating infinite output wrt
     /// non-halting programs
-    pub const MAX_INSTRUCTION_RUN_SIZE: usize = 10000;
+
+    /// It's not a constant because wasm_bindgen doesn't like associated constant
+    pub fn max_instruction_run_size() -> usize { 10000 } 
 
     /// Create a new Processador given a starting state
     pub fn new(
-        init_regs: Registers,
-        init_mem: Memory,
-        init_pc: ProgCounter,
-        instructions: Instructions,
-        init_io: HashMap<MemAddr, Value16Bit>,
-    ) -> Self {
-        Self {
-            regs: init_regs,
-            memory:init_mem,
-            pc: init_pc,
-            instr_memory: instructions,
-            io: IOSystem(init_io),
-            instrs_fetes: NumInstruccions::default(),
-        }
+        init_regs: String,
+        init_mem: String,
+        init_pc: String,
+        instructions: String,
+        init_io: String,
+    ) -> Result<Processador, String> {
+	// TODO: Rewrite these match statements
+	let regs = match input::parse_registers(init_regs) {
+	    Ok(s) => s,
+	    Err(e) => return Err(e.to_string()),
+	};
+	let memory = match input::parse_memory(init_mem) {
+	    Ok(s) => s,
+	    Err(e) => return Err(e.to_string()),
+	};
+	let pc = input::parse_pc(init_pc)?;
+
+	let instr_memory = match input::parse_instructions_from_str(instructions) {
+	    Ok(s) => s,
+	    Err(e) => return Err(e.to_string()),
+	};
+	let io = match input::parse_io(init_io) {
+	    Ok(s) => s,
+	    Err(e) => return Err(e.to_string()),
+	};
+	
+
+        Ok(Self {regs, memory, pc, instr_memory,
+	      io: IOSystem(io),
+	      instrs_fetes: NumInstruccions::default()
+	})
     }
     #[rustfmt::skip]
     /// Execute any valid instruction directly, without going through the Program Counter
-    pub fn execute_raw(&mut self, inst: &Instruction) {
+    fn execute_raw(&mut self, inst: &Instruction) {
         println!("[INFO]: Running \x1b[1;4;32m{:?}\x1b[0m", inst);
 
         if INSTRUCTS_SLOW.contains(&&*inst.get_verb()) {
@@ -101,14 +122,13 @@ impl Processador {
         self.execute_raw(&inst);
         if print_status { println!("{self}"); }
     }
-    /// Update the IO's ports. Pretty much unusable as it must be hard-coded in, but I can't really
-    /// think of an alternative that's useful
-    pub fn update_io(&mut self, new_io: HashMap<MemAddr, Value16Bit>) { self.io = IOSystem(new_io); }
 }
 
+#[wasm_bindgen]
 /// The sequence of eight registers that are contained in the [Processador]'s REGFILE.
 pub struct Registers([Reg; 8]);
 
+#[wasm_bindgen]
 /// The held memory that is contained in the [Processador]'s MEMORY module, stored as bytes (not
 /// words). 
 #[derive(Debug, Clone, Default)] 
@@ -198,6 +218,7 @@ impl IOSystem {
 /// Note that the instruction memory only holds its values at the even addresses and that the
 /// [PC](ProgCounter)
 /// increments by 2 on each one.
+#[wasm_bindgen]
 pub struct Processador {
     regs: Registers,
     memory: Memory,
@@ -208,6 +229,7 @@ pub struct Processador {
 }
 
 #[derive(Clone, Debug, Default)]
+#[wasm_bindgen]
 struct NumInstruccions {
     fast: usize,
     slow: usize,
@@ -215,12 +237,13 @@ struct NumInstruccions {
 
 #[rustfmt::skip] 
 #[derive(Clone, Copy)]                    pub struct Reg(pub i16);
+#[wasm_bindgen]
 #[derive(Hash, PartialEq, Eq, Clone)] pub struct MemAddr(pub i16);
 #[derive(Clone)]                     pub struct MemValue(pub i8);
 #[derive(Clone)]                    pub struct MemOffset(pub i16);
 /// The program counter, which hold the address of the next instruction to execute. It is
 /// incremented by 2 on every instruction, and may be altered by special branching instructions.
-#[derive(Clone)]                  pub struct ProgCounter(pub u16);
+#[derive(Clone)] #[wasm_bindgen]  pub struct ProgCounter(pub u16);
 #[derive(Clone)]                   pub struct ImmediateN6(pub i8);
 #[derive(Clone)]                   pub struct ImmediateN8(pub i8);
 #[derive(Clone)]                   pub struct Value16Bit(pub i16);

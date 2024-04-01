@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::Path, fs::File, io::Read};
 
 use toml::Table;
 
-use crate::{execute::{Reg, RegLabel, Registers, Value16Bit, MemAddr}, print_info, norm_n, PreparationError, spec::Instruction, Instructions, Memory};
+use crate::{execute::{Reg, RegLabel, Registers, Value16Bit, MemAddr}, print_info, norm_n, PreparationError, spec::Instruction, Instructions, Memory, ProgCounter};
 
 /// Describes all variants of filesystem errors, for using in [ExecutionError]
 #[derive(Debug, thiserror::Error)]
@@ -28,18 +28,9 @@ impl From<FileError> for PreparationError {
     }
 }
 
-/// Read the instructions file when ran with --simple
-pub fn read_simple_instructions_file(filename: &impl AsRef<Path>) -> anyhow::Result<Instructions> {
-    let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
-    let mut contents = String::new();
-    input_file.read_to_string(&mut contents).or(Err(FileError::ReadingError))?;
-
-    read_instructions(&contents)
-}
-
-/// Get a previous preprocessed file and turn it into a usable ordered instruction set to be
+/// Parse a string containing a list of instructions and turn it into a usable ordered instruction set to be
 /// simulated
-pub fn read_instructions(input: &str) -> anyhow::Result<Instructions> {
+pub fn parse_instructions_from_str(input: String) -> anyhow::Result<Instructions> {
     let instructions = 
         input.lines().enumerate()
         .map(|(i, line)| {
@@ -58,7 +49,7 @@ pub fn read_instructions(input: &str) -> anyhow::Result<Instructions> {
 }
 
 
-/// Read IO settings from file, in the TOML format. They must be separated by newlines. 
+/// Parse IO settings from String, in the TOML format. They must be separated by newlines. 
 ///
 /// For example:
 /// ```txt
@@ -66,10 +57,7 @@ pub fn read_instructions(input: &str) -> anyhow::Result<Instructions> {
 /// 0 = "0x0005"
 /// ```
 /// To represent `KEY-STATUS` as 1 and `KEY-DATA` as 5
-pub fn read_io_once(filename: &impl AsRef<Path>) -> anyhow::Result<HashMap<MemAddr, Value16Bit>> {
-    let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
-    let mut contents = String::new();
-    input_file.read_to_string(&mut contents).or(Err(FileError::ReadingError))?;
+pub fn parse_io(contents: String) -> anyhow::Result<HashMap<MemAddr, Value16Bit>> {
     let table: Table = contents.parse::<Table>().or(Err(FileError::UnparsableIO))?;
 
     let mut io = HashMap::new();
@@ -80,7 +68,7 @@ pub fn read_io_once(filename: &impl AsRef<Path>) -> anyhow::Result<HashMap<MemAd
     Ok(io)
 }
 
-/// Read memory list from file, in the TOML format. They must be separated by newlines. 
+/// Parse memory from String, in the TOML format. They must be separated by newlines. 
 ///
 /// For example:
 /// ```txt
@@ -93,11 +81,7 @@ pub fn read_io_once(filename: &impl AsRef<Path>) -> anyhow::Result<HashMap<MemAd
 /// 10
 /// 5
 ///```
-pub fn read_registers(filename: &impl AsRef<Path>) -> anyhow::Result<Registers> {
-    let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
-    let mut contents = String::new();
-    input_file.read_to_string(&mut contents).or(Err(FileError::ReadingError))?;
-
+pub fn parse_registers(contents: String) -> anyhow::Result<Registers> {
     let mut registers = Registers::default();
     for (i, v) in contents.lines().enumerate() {
         let Ok(v) = v.parse() else { return Err(FileError::UnparsableRegister)? };
@@ -107,7 +91,7 @@ pub fn read_registers(filename: &impl AsRef<Path>) -> anyhow::Result<Registers> 
     Ok(registers)
 }
 
-/// Read memory list from file, in the TOML format. They must be separated by newlines. 
+/// Parse memory list from String, in the TOML format. They must be separated by newlines. 
 ///
 /// For example:
 /// ```txt
@@ -123,10 +107,7 @@ pub fn read_registers(filename: &impl AsRef<Path>) -> anyhow::Result<Registers> 
 /// 0x0034 = "0x0000"
 /// 0x0036 = "0xFFF9"
 /// ```
-pub fn read_memory(filename: &impl AsRef<Path>) -> anyhow::Result<Memory> {
-    let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
-    let mut contents = String::new();
-    input_file.read_to_string(&mut contents).or(Err(FileError::ReadingError))?;
+pub fn parse_memory(contents: String) -> anyhow::Result<Memory> {
     let table: Table = contents.parse::<Table>().or(Err(FileError::UnparsableMemory))?;
 
     let mut memory = Memory::new();
@@ -135,4 +116,9 @@ pub fn read_memory(filename: &impl AsRef<Path>) -> anyhow::Result<Memory> {
         memory.insert_word( &MemAddr(norm_n(m).unwrap() as i16), norm_n(v).unwrap() as i16)
     }
     Ok(memory)
+}
+
+pub fn parse_pc(inp: String) -> Result<ProgCounter, String> {
+    let val: u16 = inp.parse().map_err(|_| "PC invàlid".to_string())?;
+    return Ok(ProgCounter(val));
 }
