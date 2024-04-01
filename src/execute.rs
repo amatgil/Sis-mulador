@@ -27,6 +27,7 @@ impl Processador {
         instructions: String,
         init_io: String,
     ) -> Result<Processador, String> {
+	crate::utils::set_panic_hook(); // Per als errors
 	// TODO: Rewrite these match statements
 	let regs = match input::parse_registers(init_regs) {
 	    Ok(s) => s,
@@ -55,16 +56,12 @@ impl Processador {
     }
     #[rustfmt::skip]
     /// Execute any valid instruction directly, without going through the Program Counter
-    fn execute_raw(&mut self, inst: &Instruction) {
-        println!("[INFO]: Running \x1b[1;4;32m{:?}\x1b[0m", inst);
-
-        if INSTRUCTS_SLOW.contains(&&*inst.get_verb()) {
-            print_info("This instruction is SLOW (memory)"); 
-            self.instrs_fetes.slow += 1;
-        } else {
-            print_info("This instruction is FAST (not-memory)"); 
-            self.instrs_fetes.fast += 1;
-        }
+    ///
+    /// Returns, in order: Registers (values separeted by newlines), Memory and OUT (usually empty)
+    fn execute_raw(&mut self, inst: &Instruction) -> Vec<String> {
+        if INSTRUCTS_SLOW.contains(&&*inst.get_verb()) { self.instrs_fetes.slow += 1; }
+	else { self.instrs_fetes.fast += 1; }
+	let mut out = String::new();
 
         match inst {
             Instruction::AND { a, b, d }      => self.regs[d].0 = self.regs[a].0 & self.regs[b].0,
@@ -83,12 +80,10 @@ impl Processador {
             Instruction::CMPLTU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) < transmute(self.regs[b].0)) as i16 },
             Instruction::CMPLEU { a, b, d }   => unsafe { self.regs[d].0 = (transmute::<i16, u16>(self.regs[a].0) <= transmute(self.regs[b].0)) as i16 },
             Instruction::LD { a, d, offset }  => self.regs[d].0 = self.memory.get_word(&(se_6(offset.0) + self.regs[a].0).into()).unwrap_or_else(|| {
-                print_info(&format!("Tried to access uninitialized memory (WORD) at addr: '{}' (hex 0x{0:X})", se_6(offset.0) + self.regs[a].0));
-                panic!();
+                panic!("{}", format!("Tried to access uninitialized memory (WORD) at addr: '{}' (hex 0x{0:X})", se_6(offset.0) + self.regs[a].0));
             }), 
             Instruction::LDB { a, d, offset } => self.regs[d].0 = se_8(self.memory.get_byte(&(se_6(offset.0) + self.regs[a].0).into()).unwrap_or_else(||{
-                print_info(&format!("Tried to access uninitialized memory (BYTE) at addr: '{}' (hex 0x{0:X})", se_6(offset.0) + self.regs[a].0));
-                panic!();
+                panic!("{}", &format!("Tried to access uninitialized memory (BYTE) at addr: '{}' (hex 0x{0:X})", se_6(offset.0) + self.regs[a].0));
             })), 
             Instruction::ST  { a, b, offset } => self.memory.insert_word(&(self.regs[b].0 + se_6(offset.0)).into(), self.regs[a].0),
             Instruction::STB { a, b, offset } => self.memory.insert_byte(&(self.regs[b].0 + se_6(offset.0)).into(), (self.regs[a].0 & 0xF) as i8),
@@ -97,30 +92,49 @@ impl Processador {
             Instruction::MOVI { d, n }        => self.regs[d].0 = se_8(n.0),
             Instruction::MOVHI { d, n }       => self.regs[d].0 |= (n.0 as i16) << 8,
             Instruction::IN { d, n }          => self.regs[d].0 = self.io.get(n).expect("Tried to access non existent IO address").0,
-            Instruction::OUT { d, n }         => println!("[OUTPUT]: value '0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[n].0, d),
+            Instruction::OUT { d, n }         => out = format!("'0x{0:0>4X}' ('{}') was printed on addr '{}'", self.regs[n].0, d),
             Instruction::JALR { a, d }        => { self.regs[d].0 = self.pc.0 as i16;   self.pc.0 = self.regs[a].0 as u16; }, // TODO: Test
             Instruction::NOP                  => {},
         }
-        println!();
+
+	let regs: String = self.regs.0.iter().map(|r| r.0).fold(String::new(), |acc, v| format!("{acc}\n{v}"));
+	let mem: String = {
+	    let mut m: std::collections::BTreeMap<_, _> = self.memory.0.clone().into_iter().collect();
+	    
+	    let mut s = String::new();
+	    for (a, v) in m.into_iter() {
+		s.push_str(&format!("{a} -> {v}\n"));
+	    }
+	    s
+	};
+
+	return vec![
+	    regs,
+	    mem,
+	    out
+	];
+
     }
 
     /// Execute the next instruction, which is the one that the Program  Counter is currently
     /// pointing to. If there is no instruction at that address, the program gracefully exits.
-    pub fn execute_next(&mut self, print_status: bool) {
+    ///
+    /// Returns, in order: Registers (values separeted by newlines), Memory and OUT (usually empty)
+    pub fn execute_next(&mut self) -> Vec<String> {
         print_info(&format!("Executing instruction at PC = {}", self.pc));
         let inst = self.instr_memory.get(&(self.pc.0 as i16).into());
         let inst = match inst {
             Some(i) => i.clone(),
             None => {
-                println!("The number of instructions done is: {:?}", self.instrs_fetes);
-                println!("There was no instruction to read when the PC = {} (dec '{}'), so the simulation has shut down 'gracefully' (for some definition of 'gracefully')",
-                    self.pc, self.pc.0);
-                std::process::exit(0);
+		let mut finale = String::new();
+                finale.push_str(&format!("The number of instructions done is: {:?}", self.instrs_fetes));
+                finale.push_str(&format!("There was no instruction to read when the PC = {} (dec '{}'), so the simulation has shut down 'gracefully' (for some definition of 'gracefully')",
+                    self.pc, self.pc.0));
+		return vec!["".to_string(), "".to_string(), "".to_string(), finale];
             },
         };
         self.pc.advance();
-        self.execute_raw(&inst);
-        if print_status { println!("{self}"); }
+        return self.execute_raw(&inst);
     }
 }
 
@@ -236,18 +250,28 @@ struct NumInstruccions {
 }
 
 #[rustfmt::skip] 
-#[derive(Clone, Copy)]                    pub struct Reg(pub i16);
+#[derive(Clone, Copy)]
+pub struct Reg(pub i16);
 #[wasm_bindgen]
-#[derive(Hash, PartialEq, Eq, Clone)] pub struct MemAddr(pub i16);
-#[derive(Clone)]                     pub struct MemValue(pub i8);
-#[derive(Clone)]                    pub struct MemOffset(pub i16);
+#[derive(Hash, PartialOrd, Ord, PartialEq, Eq, Clone)]
+pub struct MemAddr(pub i16);
+#[derive(Clone, PartialOrd, Ord, PartialEq, Eq)]
+pub struct MemValue(pub i8);
+#[derive(Clone)]
+pub struct MemOffset(pub i16);
 /// The program counter, which hold the address of the next instruction to execute. It is
 /// incremented by 2 on every instruction, and may be altered by special branching instructions.
-#[derive(Clone)] #[wasm_bindgen]  pub struct ProgCounter(pub u16);
-#[derive(Clone)]                   pub struct ImmediateN6(pub i8);
-#[derive(Clone)]                   pub struct ImmediateN8(pub i8);
-#[derive(Clone)]                   pub struct Value16Bit(pub i16);
-#[derive(Debug, Clone)]              pub struct RegLabel(pub u8);
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct ProgCounter(pub u16);
+#[derive(Clone)]
+pub struct ImmediateN6(pub i8);
+#[derive(Clone)]
+pub struct ImmediateN8(pub i8);
+#[derive(Clone)]
+pub struct Value16Bit(pub i16);
+#[derive(Debug, Clone)]
+pub struct RegLabel(pub u8);
 
 impl From<ProgCounter> for MemAddr {
     fn from(value: ProgCounter) -> Self {
@@ -309,7 +333,7 @@ macro_rules! try_from_str_i16 {
 macro_rules! other_impls_2 {
     ($($name:ident),*$(,)?) => {
         $(
-            impl fmt::Display for $name { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "0x{:0>2X}", self.0) } }
+            impl fmt::Display for $name { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.0) } }
             impl fmt::Debug for $name { fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.to_string()) } }
         )*
     }

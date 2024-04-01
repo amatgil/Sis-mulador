@@ -68,7 +68,7 @@ pub fn parse_io(contents: String) -> anyhow::Result<HashMap<MemAddr, Value16Bit>
     Ok(io)
 }
 
-/// Parse memory from String, in the TOML format. They must be separated by newlines. 
+/// Parse registers from String, in the TOML format. They must be separated by newlines. 
 ///
 /// For example:
 /// ```txt
