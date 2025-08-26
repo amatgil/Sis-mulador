@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::Path, fs::File, io::Read};
 
-use toml::Table;
+use boml::prelude::*;
 
 use crate::{execute::{Reg, RegLabel, Registers, Value16Bit, MemAddr}, print_info, norm_n, PreparationError, spec::Instruction, Instructions, Memory};
 
@@ -70,12 +70,14 @@ pub fn read_io_once(filename: &impl AsRef<Path>) -> anyhow::Result<HashMap<MemAd
     let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
     let mut contents = String::new();
     input_file.read_to_string(&mut contents).or(Err(FileError::ReadingError))?;
-    let table: Table = contents.parse::<Table>().or(Err(FileError::UnparsableIO))?;
+
+    let table: Toml = boml::parse(&contents).or(Err(FileError::UnparsableIO))?;
 
     let mut io = HashMap::new();
     for (m, v) in table.iter() {
-        let v = v.as_str().ok_or(FileError::UnparsableIO)?;
-        let _ = io.insert(MemAddr(norm_n(m).unwrap() as i16), Value16Bit(norm_n(v).unwrap() as i16));
+        let v = v.as_string().ok_or(FileError::UnparsableIO)?;
+        let m = m.to_string();
+        let _ = io.insert(MemAddr(norm_n(&m).unwrap() as i16), Value16Bit(norm_n(v).unwrap() as i16));
     }
     Ok(io)
 }
@@ -127,12 +129,13 @@ pub fn read_memory(filename: &impl AsRef<Path>) -> anyhow::Result<Memory> {
     let mut input_file = File::open(filename).or(Err(FileError::FileNotFound))?;
     let mut contents = String::new();
     input_file.read_to_string(&mut contents).or(Err(FileError::ReadingError))?;
-    let table: Table = contents.parse::<Table>().or(Err(FileError::UnparsableMemory))?;
+    let table: Toml = boml::parse(&contents).or(Err(FileError::UnparsableMemory))?;
 
     let mut memory = Memory::new();
     for (m, v) in table.iter() {
-        let v = v.as_str().ok_or(FileError::UnparsableMemory)?;
-        memory.insert_word( &MemAddr(norm_n(m).unwrap() as i16), norm_n(v).unwrap() as i16)
+        let v = v.as_string().ok_or(FileError::UnparsableMemory)?;
+        let m = m.to_string();
+        memory.insert_word( &MemAddr(norm_n(&m).unwrap() as i16), norm_n(v).unwrap() as i16)
     }
     Ok(memory)
 }
