@@ -1,11 +1,19 @@
 #![allow(non_snake_case)]
-use std::{collections::HashMap, convert::Infallible};
 
+#[cfg(not(feature = "executable"))]
+
+fn main() {
+    compile_error!("Please use the 'executable' feature (cargo build -F executable) to run the program");
+}
+
+#[cfg(feature = "executable")]
+use std::{collections::HashMap, convert::Infallible};
 use clap::Parser;
 use sICmulador::{*, preprocessor::{Input, parse_complete_file}};
 pub use sICmulador::CliArgs;
 
 
+#[cfg(feature = "executable")]
 fn main() -> anyhow::Result<Infallible> {
     let args = CliArgs::parse();
 
